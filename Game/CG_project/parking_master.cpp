@@ -16,6 +16,7 @@
 #include "game_state.h"
 #include "mesh.h"
 #include "shader.h"
+#include "car.h"
 
 #define M_PI 3.14159265358979323846
 
@@ -80,19 +81,6 @@ GLfloat lightZ = 1.0f;
 GLfloat lightD = 1.0f;	//distance
 float light = 0.8f;
 
-// 기본 적용 변환 - 테스트용
-glm::mat4 SRT_MATRIX()
-{
-	glm::mat4 S = glm::mat4(1.0f);
-	//glm::mat4 T = glm::mat4(1.0f);			//--- 이동 행렬 선언
-	//glm::mat4 Rx = glm::mat4(1.0f);			//--- 회전 행렬 선언
-
-	S = glm::scale(S, glm::vec3(1.0, 1.0, 1.0));								//--- 스케일 변환 행렬
-	//Rx = glm::rotate(Rx, glm::radians(20.0f), glm::vec3(1.0, 0.0, 0.0));		//--- x축 회전 행렬 (고정)
-	//T = glm::translate(T, glm::vec3(dx, dy, dz));								//--- 이동 행렬
-
-	return S;
-}
 
 // 핸들 변환 - 마우스에 따라 회전 적용
 float handle_rotateZ = 0.0f;
@@ -172,127 +160,7 @@ glm::mat4 Gear_Stick()
 	return T * Rx;
 }
 
-// 차체의 변환 - 이를 기준으로 헤드라이트, 바퀴 등의 위치가 정해진다.
-float car_dx = 0.0f, car_dy = WHEEL_SIZE, car_dz = -3.0f;
-float car_rotateY = 0.0f;
-glm::mat4 Car_Body()
-{
-	glm::mat4 T = glm::mat4(1.0f);
-	glm::mat4 Ry = glm::mat4(1.0f);
-	//glm::mat4 S = glm::mat4(1.0f);
 
-	Ry = glm::rotate(Ry, glm::radians(car_rotateY), glm::vec3(0.0, 1.0, 0.0));
-	T = glm::translate(T, glm::vec3(car_dx, car_dy, car_dz));
-
-	return SRT_MATRIX() * T * Ry;
-}
-glm::mat4 Headlights(int left_right)
-{
-	glm::mat4 T = glm::mat4(1.0f);
-	glm::mat4 Ry = glm::mat4(1.0f);
-	//glm::mat4 S = glm::mat4(1.0f);
-
-	if (left_right == 0)
-	{
-		T = glm::translate(T, glm::vec3(-CAR_SIZE / 3, CAR_SIZE / 8, CAR_SIZE));
-	}
-	else if (left_right == 1)
-	{
-		T = glm::translate(T, glm::vec3(CAR_SIZE / 3, CAR_SIZE / 8, CAR_SIZE));
-	}
-
-	return Car_Body() * T;
-}
-
-// 바퀴 변환 - 앞바퀴 회전
-float front_wheels_rotateY = 0.0f;
-float wheel_rect_rotateX = 0.0f;
-glm::mat4 Wheels(int num)
-{
-	glm::mat4 T2 = glm::mat4(1.0f);
-	if (num == 1) //앞 기준 왼쪽 앞
-	{
-		T2 = glm::translate(T2, glm::vec3(-(CAR_SIZE / 2 + WHEEL_SIZE / 4), 0.0f, CAR_SIZE * 0.5f));
-	}
-	if (num == 2) //오른쪽 앞
-	{
-		T2 = glm::translate(T2, glm::vec3(CAR_SIZE / 2 + WHEEL_SIZE / 4, 0.0f, CAR_SIZE * 0.5f));
-	}
-	if (num == 3) //왼쪽 뒤
-	{
-		T2 = glm::translate(T2, glm::vec3(-(CAR_SIZE / 2 + WHEEL_SIZE / 4), 0.0f, -CAR_SIZE * 0.5f));
-	}
-	if (num == 4)  //오른쪽 뒤
-	{
-		T2 = glm::translate(T2, glm::vec3(CAR_SIZE / 2 + WHEEL_SIZE / 4, 0.0f, -CAR_SIZE * 0.5f));
-	}
-	return Car_Body() * T2;
-}
-glm::mat4 Wheel_rects(int num)
-{
-	glm::mat4 T = glm::mat4(1.0f);
-	glm::mat4 T2 = glm::mat4(1.0f);
-	glm::mat4 Ry = glm::mat4(1.0f);
-
-	if (num == 1 || num == 2)
-	{
-		//앞바퀴들에게 회전 변환 추가 적용
-		Ry = glm::rotate(Ry, glm::radians(front_wheels_rotateY), glm::vec3(0.0, 1.0, 0.0));
-	}
-	if (num == 1) //앞 기준 왼쪽 앞
-	{
-		T = glm::translate(T, glm::vec3(-(0.001f), 0.0f, 0.0f));
-		T2 = glm::translate(T2, glm::vec3(-(CAR_SIZE / 2 + WHEEL_SIZE / 4), 0.0f, CAR_SIZE * 0.5f));
-	}
-	if (num == 2) //오른쪽 앞
-	{
-		T = glm::translate(T, glm::vec3((0.001f), 0.0f, 0.0f));
-		T2 = glm::translate(T2, glm::vec3(CAR_SIZE / 2 + WHEEL_SIZE / 4, 0.0f, CAR_SIZE * 0.5f));
-	}
-	if (num == 3) //왼쪽 뒤
-	{
-		T = glm::translate(T, glm::vec3(-(0.001f), 0.0f, 0.0f));
-		T2 = glm::translate(T2, glm::vec3(-(CAR_SIZE / 2 + WHEEL_SIZE / 4), 0.0f, -CAR_SIZE * 0.5f));
-	}
-	if (num == 4)  //오른쪽 뒤
-	{
-		T = glm::translate(T, glm::vec3((0.001f), 0.0f, 0.0f));
-		T2 = glm::translate(T2, glm::vec3(CAR_SIZE / 2 + WHEEL_SIZE / 4, 0.0f, -CAR_SIZE * 0.5f));
-	}
-
-	glm::mat4 Rx = glm::mat4(1.0f);
-	Rx = glm::rotate(Rx, glm::radians(wheel_rect_rotateX), glm::vec3(1.0, 0.0, 0.0));
-
-	return Car_Body() * T2 * Ry * Rx * T;
-}
-glm::mat4 Wheel_on_000(int num, int type) //num은 4개 바퀴의 번호, type은 실린더, 뚜껑 객체 종류
-{
-	glm::mat4 T = glm::mat4(1.0f);
-	glm::mat4 Ry = glm::mat4(1.0f);
-	glm::mat4 Ry2 = glm::mat4(1.0f);
-	//glm::mat4 S = glm::mat4(1.0f);
-
-	Ry = glm::rotate(Ry, glm::radians(90.0f), glm::vec3(0.0, 1.0, 0.0));
-	if (num == 1 || num == 2)
-	{
-		//앞바퀴들에게 회전 변환 추가 적용
-		Ry2 = glm::rotate(Ry2, glm::radians(front_wheels_rotateY), glm::vec3(0.0, 1.0, 0.0));
-	}
-	if (type == 0)		//바퀴
-	{
-		T = glm::translate(T, glm::vec3(0.0f, 0.0f, -WHEEL_SIZE / 4));
-	}
-	else if (type == 1) //바퀴 옆면1
-	{
-		T = glm::translate(T, glm::vec3(0.0f, 0.0f, -WHEEL_SIZE / 4));
-	}
-	else if (type == 2) //바퀴 옆면2
-	{
-		T = glm::translate(T, glm::vec3(0.0f, 0.0f, WHEEL_SIZE / 4));
-	}
-	//Car_Body() 이미 적용됨
-	return Wheels(num) * Ry2 * Ry * T;
-}
 
 // 장애물 차 변환
 float obstacle_xz[5][2] = {
@@ -332,8 +200,8 @@ glm::mat4 FinishRect()
 glm::mat4 RearCameraView()
 {
 	// 자동차의 위치와 방향을 기준으로 후방 카메라 뷰 설정
-	glm::vec3 carPosition(car_dx, car_dy, car_dz); // 자동차 위치
-	float radians = glm::radians(car_rotateY);     // 자동차 회전 각도
+	glm::vec3 carPosition(Car_GetDX(), Car_GetDY(), Car_GetDZ()); // 자동차 위치
+	float radians = glm::radians(Car_GetRotationY());     // 자동차 회전 각도
 	glm::vec3 carDirection(-sin(radians), 0.0f, -cos(radians)); // 자동차 뒤쪽 방향
 
 	// 카메라를 자동차 바로 뒤쪽에 배치
@@ -386,45 +254,10 @@ bool doLinesIntersect(float x1, float z1, float x2, float z2, float x3, float z3
 }
 
 // 자동차 이동-회전 애니메이션 관련
-float car_speed = 0.0f;						// 현재 자동차 속도
-bool isAcceleratingForward = false;
-bool isAcceleratingBackward = false;
-const float MAX_SPEED = 0.01f;				// 최대 속도
-const float acceleration = 0.001f;			// 가속도
-const float deceleration = 0.005f;			// 감속도 (브레이크)
-const float friction = 0.0001f;				// 마찰력 (자연 감속)
-bool isBraking = false;						// 브레이크 상태
+
 const float speed = 0.05f;
 const float HANDLE_RETURN_SPEED = 3.0f;		// 복원 속도
 const float CAR_SPEED = 0.05f;				// 자동차 이동 속도
-
-// 자동차 꼭짓점 추출 함수
-std::vector<std::pair<float, float>> getRotatedCarCorners(float carX, float carZ, float carSize, float carRotateY)
-{
-	float halfWidth = CAR_SIZE / 2;
-	float halfHeight = CAR_SIZE;
-
-	// 꼭짓점의 상대 좌표
-	std::vector<std::pair<float, float>> corners = {
-		{-halfWidth, -halfHeight}, // 좌하단
-		{halfWidth, -halfHeight},  // 우하단
-		{halfWidth, halfHeight},   // 우상단
-		{-halfWidth, halfHeight}   // 좌상단
-	};
-
-	// 회전 각도(라디안)
-	float radians = glm::radians(-carRotateY);
-
-	// 회전된 꼭짓점 좌표
-	std::vector<std::pair<float, float>> rotatedCorners;
-	for (const auto& corner : corners)
-	{
-		float rotatedX = corner.first * cos(radians) - corner.second * sin(radians);
-		float rotatedZ = corner.first * sin(radians) + corner.second * cos(radians);
-		rotatedCorners.emplace_back(carX + rotatedX, carZ + rotatedZ);
-	}
-	return rotatedCorners;
-}
 
 // 벽과 충돌하는 경우
 bool checkCollisionWalls(const std::vector<std::pair<float, float>>& carCorners, float wallX, float wallZ, float wallWidth, float wallHeight)
@@ -548,9 +381,9 @@ void UpdateParkingStatus(const std::vector<std::pair<float, float>>& carCorners)
 void nextStage()
 {
 	// 각도 초기화
-	car_rotateY = 0.0f;
-	front_wheels_rotateY = 0.0f;
-	wheel_rect_rotateX = 0.0f;
+	Car_SetRotationY(0.0f);
+	Car_SetFrontWheelRotationY(0.0f);
+	Car_SetWheelRotationX(0.0f);
 
 	cumulativeAngle = 0.0f;
 	handle_rotateZ = 0.0f;
@@ -594,8 +427,7 @@ void nextStage()
 		obstacle_xz[3][1] = FINISH_OFFSET_Z - 1.55f;
 
 		// 차 위치 변경
-		car_dx = 2.0f;
-		car_dz = -4.0f;
+		Car_SetPosition(2.0f, -4.0f);
 	}
 	else if (GameState_GetCurrentStage() == 2)
 	{
@@ -628,8 +460,7 @@ void nextStage()
 		obstacle_xz[4][1] = FINISH_OFFSET_Z + 1.55f * 2.0f;
 
 		// 차 위치 변경
-		car_dx = -4.0f;
-		car_dz = -4.0f;
+		Car_SetPosition(-4.0f, -4.0f);
 	}
 	else if (GameState_GetCurrentStage() == 3)
 	{
@@ -643,7 +474,7 @@ void nextStage()
 time_t currentTime;
 void TimerFunction_UpdateMove(int value)
 {
-	front_wheels_rotateY = (handle_rotateZ / 900.0f) * 30.0f;
+	Car_SetFrontWheelRotationY((handle_rotateZ / 900.0f) * 30.0f);
 
 	currentTime = time(nullptr);
 	if (!GameState_IsPaused())
@@ -651,76 +482,26 @@ void TimerFunction_UpdateMove(int value)
 		GameState_SetElapsedSeconds(static_cast<int>(currentTime - GameState_GetPauseTime() - GameState_GetStartTime()));
 	}
 
-	// 속도 계산
-	if (GameState_GetCurrentGear() == PARK || GameState_GetCurrentGear() == NEUTRAL)
-	{
-		car_speed = 0.0f; // 정지
-	}
-
-	// 후진 처리
-	if (GameState_GetCurrentGear() == REVERSE && isAcceleratingBackward)
-	{
-		car_speed -= acceleration;
-		if (car_speed < -MAX_SPEED)
-			car_speed = -MAX_SPEED;
-	}
-
-	// 전진 처리
-	if (GameState_GetCurrentGear() == DRIVE && isAcceleratingForward)
-	{
-		car_speed += acceleration;
-		if (car_speed > MAX_SPEED)
-			car_speed = MAX_SPEED;
-	}
-	if (isBraking)
-	{
-		if (car_speed > 0.0f)
-		{
-			car_speed -= deceleration;
-			if (car_speed < 0.0f)
-				car_speed = 0.0f;
-		}
-		else if (car_speed < 0.0f)
-		{
-			car_speed += deceleration;
-			if (car_speed > 0.0f)
-				car_speed = 0.0f;
-		}
-	}
-	if (!isAcceleratingForward && !isAcceleratingBackward && !isBraking)
-	{
-		// 자연 감속
-		if (car_speed > 0.0f)
-		{
-			car_speed -= friction;
-			if (car_speed < 0.0f)
-				car_speed = 0.0f;
-		}
-		else if (car_speed < 0.0f)
-		{
-			car_speed += friction;
-			if (car_speed > 0.0f)
-				car_speed = 0.0f;
-		}
-	}
+	Car_UpdateSpeed(GameState_GetCurrentGear());
 
 	// 차량의 꼭짓점 계산
-	auto carCorners = getRotatedCarCorners(car_dx, car_dz, CAR_SIZE, car_rotateY);
+	auto carCorners = Car_GetRotatedCorners();
 	// 주차 상태 업데이트
 	UpdateParkingStatus(carCorners);
 
-	if (car_speed != 0.0f)
+	if (Car_GetSpeed() != 0.0f)
 	{
-		// 이동 후의 새로운 위치 계산
-		float radians = glm::radians(car_rotateY);
-		float new_dx = car_dx + car_speed * sin(radians);
-		float new_dz = car_dz + car_speed * cos(radians);
+		float radians = glm::radians(Car_GetRotationY());
+		float new_dx = Car_GetDX() + Car_GetSpeed() * sin(radians);
+		float new_dz = Car_GetDZ() + Car_GetSpeed() * cos(radians);
 
-		// 차량의 꼭짓점 계산
+		const float n = 2.0f;
+		float newAngle = Car_GetRotationY() + Car_GetFrontWheelRotationY() * n * Car_GetSpeed();
+
+		auto futureCarCorners = Car_GetRotatedCorners(new_dx, new_dz, newAngle);
+
 		bool isColliding = false;
-		auto carCorners = getRotatedCarCorners(new_dx, new_dz, CAR_SIZE, car_rotateY);
-
-		if (GameState_IsInvincible())
+		if (!GameState_IsInvincible())
 		{
 			// 벽과의 충돌 여부 확인
 			for (int i = 0; i < 4; ++i)
@@ -730,36 +511,32 @@ void TimerFunction_UpdateMove(int value)
 				float wallWidth = (i % 2 == 0) ? GROUND_SIZE * 2 : WALL_THICKNESS;
 				float wallHeight = (i % 2 == 1) ? GROUND_SIZE * 2 : WALL_THICKNESS;
 
-				if (checkCollisionWalls(carCorners, wallX, wallZ, wallWidth, wallHeight))
+				if (checkCollisionWalls(futureCarCorners, wallX, wallZ, wallWidth, wallHeight))
 				{
 					isColliding = true;
 					break;
 				}
 			}
 
-			// 장애물과 충돌 확인
-			if (checkCollisionObstacle(carCorners))
+			if (checkCollisionObstacle(futureCarCorners))
 			{
 				isColliding = true;
 			}
 		}
 
-		// 충돌이 없을 때만 이동 업데이트
 		if (!isColliding)
 		{
-
-			// 회전 업데이트 (바퀴 회전에 따라 차량 회전)
-			float n = (MAX_SPEED * 2) / MAX_SPEED;
-			car_rotateY += front_wheels_rotateY * n * car_speed; // n * MAX_SPEED = 0.02 가 적당
-			car_dx = new_dx;
-			car_dz = new_dz;
-			wheel_rect_rotateX += car_speed * 200.0f;
+			Car_SetRotationY(newAngle);
+			Car_SetPosition(new_dx, new_dz);
+			float newWheelAngle = Car_GetWheelRotationX() + Car_GetSpeed() * 200.0f;
+			Car_SetWheelRotationX(newWheelAngle);
 		}
 		else
 		{
 			GameState_SetCrushed(true);
+			Car_SetSpeed(0.0f);
 		}
-
+	
 		// 핸들과 바퀴 복원 로직
 		if (!is_mouse_on_handle)
 		{
@@ -775,7 +552,7 @@ void TimerFunction_UpdateMove(int value)
 			cumulativeAngle = handle_rotateZ;
 
 			// 복원된 핸들 값에 따라 바퀴 회전량 동기화
-			front_wheels_rotateY = (handle_rotateZ / 900.0f) * 30.0f;
+			Car_SetFrontWheelRotationY((handle_rotateZ / 900.0f) * 30.0f);
 		}
 	}
 
@@ -818,6 +595,8 @@ int main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
 	// 시간 초기화
 	GameState_UpdateStartTime(time(nullptr));
 	GameState_UpdatePauseTime(GameState_GetStartTime() - time(nullptr));
+
+	Car_Init();
 
 	glEnable(GL_DEPTH_TEST);
 	// 자동체 액셀 브레이크 감지 - 이동 애니메이션
@@ -866,8 +645,8 @@ void headLight(int modecLoc)
 
 	glm::vec3 headLightPos = (headLightWorldPosLeft + headLightWorldPosRight) * 0.5f;
 
-	// 자동차가 바라보는 방향 계산 (car_rotateY 이용)
-	float radians = glm::radians(car_rotateY);
+	// 자동차가 바라보는 방향 계산
+	float radians = glm::radians(Car_GetRotationY());
 	glm::vec3 carForwardDir(-sin(radians), 0.0f, -cos(radians));
 	glm::vec3 headLightDir = glm::normalize(-carForwardDir);
 
@@ -1023,7 +802,7 @@ void drawWalls(int modelLoc)
 	int objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glUniform3f(objColorLocation, 0.3f, 0.3f, 0.3f);
 	glBindVertexArray(vao[3]);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(SRT_MATRIX()));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
 	glDrawArrays(GL_TRIANGLES, 0, 24);
 }
 void drawGround(int modelLoc)
@@ -1031,7 +810,7 @@ void drawGround(int modelLoc)
 	int objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glUniform3f(objColorLocation, 0.5f, 0.5f, 0.5f);
 	// 바닥
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(SRT_MATRIX()));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
 	glBindVertexArray(vao[0]);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 }
@@ -1119,7 +898,7 @@ void drawCarCorners(int modelLoc)
 	int objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glUniform3f(objColorLocation, 1.0f, 0.0f, 0.0f);
 	// 충돌체크용 차 꼭짓점 그리기
-	auto carCorners = getRotatedCarCorners(car_dx, car_dz, CAR_SIZE, car_rotateY);
+	auto carCorners = Car_GetRotatedCorners();
 	for (const auto& corner : carCorners)
 	{
 		float cornerX = corner.first;
@@ -1162,7 +941,7 @@ void drawScene()
 			}
 
 			// 차체 중심을 공전 중심으로 설정
-			glm::vec3 orbitCenter = glm::vec3(car_dx, car_dy, car_dz);
+			glm::vec3 orbitCenter = glm::vec3(Car_GetDX(), Car_GetDY(), Car_GetDZ());
 
 			// 카메라 위치 계산
 			float cameraDistance = c_dz; // `c_dz`를 카메라 거리로 사용
@@ -1581,11 +1360,11 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		{
 			if (GameState_GetCurrentGear() == DRIVE)
 			{
-				isAcceleratingForward = true; // 전진
+				Car_SetAcceleratingForward(true); // 전진
 			}
 			else if (GameState_GetCurrentGear() == REVERSE)
 			{
-				isAcceleratingBackward = true; // 후진
+				Car_SetAcceleratingBackward(true); // 후진
 			}
 			break;
 		}
@@ -1593,7 +1372,7 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		{
 			// isAcceleratingForward = false;
 			// isAcceleratingBackward = true;
-			isBraking = true;
+			Car_SetBraking(true);
 			break;
 		}
 		}
@@ -1606,13 +1385,13 @@ GLvoid KeyboardUp(unsigned char key, int x, int y)
 	{
 	case 'w': // 액셀 해제
 	{
-		isAcceleratingForward = false;
-		isAcceleratingBackward = false;
+		Car_SetAcceleratingForward(false);
+		Car_SetAcceleratingBackward(false);
 		break;
 	}
 	case ' ': // 액셀 해제
 	{
-		isBraking = false;
+		Car_SetBraking(false);
 		break;
 	}
 	}
