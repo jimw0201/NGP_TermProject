@@ -129,11 +129,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="game_state.cpp" />
     <ClCompile Include="parking_master.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="fragment.glsl" />
     <None Include="vertex.glsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="game_state.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

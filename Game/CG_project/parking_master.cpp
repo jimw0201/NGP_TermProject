@@ -13,15 +13,9 @@
 #include <gl/glm/ext.hpp>
 #include <gl/glm/gtc/matrix_transform.hpp>
 
-#define M_PI 3.14159265358979323846
+#include "game_state.h"
 
-// 별 개수 관련
-time_t startTime;
-time_t pauseTime;
-time_t tempTime;
-int elapsedSeconds = 0;
-bool crushed = false;
-bool invincible = false;
+#define M_PI 3.14159265358979323846
 
 // 클라이언트
 #define clientWidth 900
@@ -69,16 +63,6 @@ GLfloat gear_stick_rect[] = {
 	0.1f, 0, -0.1f,  0.0f, 0.0f, 0.0f,
 	0.1f, 0, 0.1f, 	 0.0f, 0.0f, 0.0f,
 };
-
-// 기어 상태
-enum GearState
-{
-	PARK,	    // P
-	REVERSE,    // R
-	NEUTRAL,	// N
-	DRIVE		// D
-};
-GearState currentGear = DRIVE; // 현재 기어 상태를 저장하는 변수
 
 // Car 초기화
 void initCar();
@@ -170,7 +154,6 @@ GLfloat walls[] = {
 };
 
 // 주차 상태를 나타내는 변수
-bool isParked = false;
 void UpdateParkingStatus(const std::vector<std::pair<float, float>>& carCorners);
 
 // 텍스트 렌더링 함수
@@ -288,7 +271,7 @@ glm::mat4 Gear_Stick()
 
 	// 기어 상태에 따라 y좌표 변경
 	float gearYOffset = 0.0f;
-	switch (currentGear)
+	switch (GameState_GetCurrentGear())
 	{
 	case PARK:
 		gearYOffset = 0.55f;
@@ -680,16 +663,12 @@ void UpdateParkingStatus(const std::vector<std::pair<float, float>>& carCorners)
 		newIsParked = true;
 	}
 
-	if (newIsParked != isParked)
+	if (newIsParked != GameState_IsParked())
 	{
-		isParked = newIsParked;
+		GameState_SetParked(newIsParked);
 	}
 }
 
-// 다음 스테이지 (수치 변경)
-int current_stage = 1;
-bool pause_mode = false;
-bool isClear = false;
 void nextStage()
 {
 	// 각도 초기화
@@ -702,19 +681,19 @@ void nextStage()
 	lastAngle = 0.0f;
 
 	// 기어 초기화
-	currentGear = DRIVE;
+	GameState_SetCurrentGear(DRIVE);
 
 	// 시간 초기화
-	startTime = time(nullptr);
-	pauseTime = startTime - time(nullptr);
+	GameState_UpdateStartTime(time(nullptr));
+	GameState_UpdatePauseTime(GameState_GetStartTime() - time(nullptr));
 
 	// 충돌여부 초기화
-	crushed = false;
+	GameState_SetCrushed(false);
 
-	if (current_stage == 1)
+	if (GameState_GetCurrentStage() == 1)
 	{
 		//next stage
-		current_stage++;
+		GameState_SetCurrentStage(GameState_GetCurrentStage() + 1);
 
 		// 도착지점 위치 변경
 		FINISH_OFFSET_X = 3.0f;
@@ -742,10 +721,10 @@ void nextStage()
 		car_dx = 2.0f;
 		car_dz = -4.0f;
 	}
-	else if (current_stage == 2)
+	else if (GameState_GetCurrentStage() == 2)
 	{
 		//next stage
-		current_stage++;
+		GameState_SetCurrentStage(GameState_GetCurrentStage() + 1);
 
 		// 도착지점 위치 변경
 		FINISH_OFFSET_X = -2.0f;
@@ -776,7 +755,7 @@ void nextStage()
 		car_dx = -4.0f;
 		car_dz = -4.0f;
 	}
-	else if (current_stage == 3)
+	else if (GameState_GetCurrentStage() == 3)
 	{
 		//finish
 		std::cout << "--Clear!!!--\n";
@@ -791,19 +770,19 @@ void TimerFunction_UpdateMove(int value)
 	front_wheels_rotateY = (handle_rotateZ / 900.0f) * 30.0f;
 
 	currentTime = time(nullptr);
-	if (!pause_mode)
+	if (!GameState_IsPaused())
 	{
-		elapsedSeconds = static_cast<int>(currentTime - pauseTime - startTime);
+		GameState_SetElapsedSeconds(static_cast<int>(currentTime - GameState_GetPauseTime() - GameState_GetStartTime()));
 	}
 
 	// 속도 계산
-	if (currentGear == PARK || currentGear == NEUTRAL)
+	if (GameState_GetCurrentGear() == PARK || GameState_GetCurrentGear() == NEUTRAL)
 	{
 		car_speed = 0.0f; // 정지
 	}
 
 	// 후진 처리
-	if (currentGear == REVERSE && isAcceleratingBackward)
+	if (GameState_GetCurrentGear() == REVERSE && isAcceleratingBackward)
 	{
 		car_speed -= acceleration;
 		if (car_speed < -MAX_SPEED)
@@ -811,7 +790,7 @@ void TimerFunction_UpdateMove(int value)
 	}
 
 	// 전진 처리
-	if (currentGear == DRIVE && isAcceleratingForward)
+	if (GameState_GetCurrentGear() == DRIVE && isAcceleratingForward)
 	{
 		car_speed += acceleration;
 		if (car_speed > MAX_SPEED)
@@ -865,7 +844,7 @@ void TimerFunction_UpdateMove(int value)
 		bool isColliding = false;
 		auto carCorners = getRotatedCarCorners(new_dx, new_dz, CAR_SIZE, car_rotateY);
 
-		if (!invincible)
+		if (GameState_IsInvincible())
 		{
 			// 벽과의 충돌 여부 확인
 			for (int i = 0; i < 4; ++i)
@@ -902,7 +881,7 @@ void TimerFunction_UpdateMove(int value)
 		}
 		else
 		{
-			crushed = true;
+			GameState_SetCrushed(true);
 		}
 
 		// 핸들과 바퀴 복원 로직
@@ -961,8 +940,8 @@ int main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
 		std::cout << "GLEW Initialized\n";
 
 	// 시간 초기화
-	startTime = time(nullptr);
-	pauseTime = startTime - time(nullptr);
+	GameState_UpdateStartTime(time(nullptr));
+	GameState_UpdatePauseTime(GameState_GetStartTime() - time(nullptr));
 
 	glEnable(GL_DEPTH_TEST);
 	initCar();
@@ -1019,7 +998,7 @@ void illuminate(int modelLoc)
 	unsigned int lightPosLocation = glGetUniformLocation(shaderProgramID, "lightPos");
 	glUniform3f(lightPosLocation, lightX, lightY, lightZ);
 
-	if (pause_mode)
+	if (GameState_IsPaused())
 	{
 		glUseProgram(shaderProgramID);
 		int lightColorLocation = glGetUniformLocation(shaderProgramID, "lightColor");
@@ -1170,7 +1149,7 @@ void drawFinishRect(int modelLoc)
 {
 	int objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glUniform3f(objColorLocation, 1.0f, 1.0f, 1.0f);
-	if (isParked)
+	if (GameState_IsParked())
 	{
 		glUniform3f(objColorLocation, 0.0f, 1.0f, 0.0f);
 	}
@@ -1216,7 +1195,7 @@ void drawObstacleCars(int modelLoc)
 	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glUniform3f(objColorLocation, 0.5f, 0.5f, 0.5f);
 	glDrawArrays(GL_TRIANGLES, 6, 6);
-	if (current_stage == 3)
+	if (GameState_GetCurrentStage() == 3)
 	{
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(ObstacleCar(4)));
 		objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
@@ -1239,7 +1218,7 @@ void drawObstacleCars(int modelLoc)
 	glDrawArrays(GL_TRIANGLES, 0, TRI_COUNT * 3);
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(ObstacleCar(3)));
 	glDrawArrays(GL_TRIANGLES, 0, TRI_COUNT * 3);
-	if (current_stage == 3)
+	if (GameState_GetCurrentStage() == 3)
 	{
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(ObstacleCar(4)));
 		glDrawArrays(GL_TRIANGLES, 0, TRI_COUNT * 3);
@@ -1279,7 +1258,7 @@ void drawScene()
 	int projLoc = glGetUniformLocation(shaderProgramID, "projectionTransform");
 
 	// 3인칭 뷰
-	if (currentGear != REVERSE)
+	if (GameState_GetCurrentGear() != REVERSE)
 	{
 		if (true)
 		{
@@ -1347,13 +1326,13 @@ void drawScene()
 		drawFinishRect(modelLoc);
 
 		// 차 꼭지점 (좌표에 따라) 그리기 (디버깅, 무적)
-		if (invincible)
+		if (GameState_IsInvincible())
 		{
 			drawCarCorners(modelLoc);
 		}
 	}
 	// 후방 카메라 뷰
-	if (currentGear == REVERSE)
+	if (GameState_GetCurrentGear() == REVERSE)
 	{
 		// 후방 카메라 뷰포트 설정
 		//int rearViewWidth = clientWidth / 3;
@@ -1450,13 +1429,13 @@ void drawScene()
 		float y = miniMapHeight * 0.5f;
 
 		int star_count = 1;
-		if (elapsedSeconds < 30)
+		if (GameState_GetElapsedSeconds() < 30)
 			glColor3f(1.0f, 1.0f, 1.0f); // 흰색
-		else if (elapsedSeconds < 60)
+		else if (GameState_GetElapsedSeconds() < 60)
 			glColor3f(1.0f, 1.0f, 0.0f); // 노란색
-		else if (elapsedSeconds >= 60)
+		else if (GameState_GetElapsedSeconds() >= 60)
 			glColor3f(1.0f, 0.0f, 0.0f); // 빨간색
-		std::string timeString = std::to_string(elapsedSeconds) + "s";
+		std::string timeString = std::to_string(GameState_GetElapsedSeconds()) + "s";
 
 		glPushMatrix();
 		glTranslatef(p_x + 25, y + 84, 0.0f);
@@ -1521,7 +1500,7 @@ void drawScene()
 	}
 	glEnable(GL_DEPTH_TEST);
 
-	if (pause_mode)
+	if (GameState_IsPaused())
 	{
 		int miniMapWidth = clientWidth / 2;
 		int miniMapHeight = clientHeight / 2;
@@ -1558,7 +1537,7 @@ void drawScene()
 		float mx = miniMapWidth * 0.5f;
 		float my = miniMapHeight * 0.5f;
 
-		if (!isClear) // 정지 모드
+		if (!GameState_IsClear()) // 정지 모드
 		{
 			glColor3f(1.0f, 1.0f, 1.0f); // 흰색
 			std::string String = "PAUSE";
@@ -1578,7 +1557,7 @@ void drawScene()
 		else // 클리어 표시
 		{
 			glColor3f(1.0f, 1.0f, 1.0f); // 흰색
-			std::string String = "stage " + std::to_string(current_stage) + " clear!!";
+			std::string String = "stage " + std::to_string(GameState_GetCurrentStage()) + " clear!!";
 
 			glPushMatrix();
 			glTranslatef(mx - 50, my + 50, 0.0f);
@@ -1588,11 +1567,11 @@ void drawScene()
 
 			glColor3f(1.0f, 1.0f, 0.0f); // 노란색
 			int star_count = 1;
-			if (elapsedSeconds <= 60)
+			if (GameState_GetElapsedSeconds() <= 60)
 			{
 				star_count++;
 			}
-			if (!crushed)
+			if (!GameState_IsCrushed())
 			{
 				star_count++;
 			}
@@ -1605,7 +1584,7 @@ void drawScene()
 			glPopMatrix();
 
 			glColor3f(1.0f, 1.0f, 1.0f); // 흰색
-			if (current_stage <= 2)
+			if (GameState_GetCurrentStage() <= 2)
 			{
 				String = "Press 'n' to next stage";
 				glPushMatrix();
@@ -1651,70 +1630,70 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	}
 	if (key == 'n')
 	{
-		if (isClear)
+		if (GameState_IsClear())
 		{
 			nextStage();
-			pause_mode = false;
-			isClear = false;
+			GameState_SetPaused(false);
+			GameState_SetClear(false);
 		}
 	}
-	if (!isClear)
+	if (!GameState_IsClear())
 	{
 		if (key == 27) // ESC 키
 		{
-			if (pause_mode) //해제
+			if (GameState_IsPaused()) //해제
 			{
 				//startTime = time(nullptr) - (pauseTime - startTime); // 정지 시간만큼 보정
-				pauseTime += time(nullptr) - tempTime;
-				pause_mode = false;
+				GameState_UpdatePauseTime(GameState_GetPauseTime() + time(nullptr) - GameState_GetTempTime());
+				GameState_SetPaused(false);
 			}
 			else //정지
 			{
-				tempTime = currentTime;
-				pause_mode = true;
+				GameState_UpdateTempTime(currentTime);
+				GameState_SetPaused(true);
 			}
 		}
 	}
-	if (!pause_mode)
+	if (!GameState_IsPaused())
 	{
 		switch (key)
 		{
 		case 'i':
 		{
-			if (invincible)
-				invincible = false;
+			if (GameState_IsInvincible())
+				GameState_SetInvincible(false);
 			else
-				invincible = true;
+				GameState_SetInvincible(true);
 			break;
 		}
 		case 'q': // 이전 기어
 		{
-			if (currentGear > PARK)
-				currentGear = static_cast<GearState>(currentGear - 1);
+			if (GameState_GetCurrentGear() > PARK)
+				GameState_SetCurrentGear(static_cast<GearState>(GameState_GetCurrentGear() - 1));
 
-			if (currentGear == PARK)
+			if (GameState_GetCurrentGear() == PARK)
 			{
-				if (isParked)
+				if (GameState_IsParked())
 				{
-					pause_mode = true;
-					isClear = true;
+					GameState_SetPaused(true);
+					GameState_SetClear(true);
 				}
 			}
 			break;
 		}
 		case 'e': // 다음 기어
 		{
-			if (currentGear < DRIVE)
-				currentGear = static_cast<GearState>(currentGear + 1);
+			if (GameState_GetCurrentGear() < DRIVE)
+				GameState_SetCurrentGear(static_cast<GearState>(GameState_GetCurrentGear() + 1));
 			break;
 		}
 		case 'w': // 액셀
 		{
-			if (currentGear == DRIVE)
+			if (GameState_GetCurrentGear() == DRIVE)
 			{
 				isAcceleratingForward = true; // 전진
 			}
-			else if (currentGear == REVERSE)
+			else if (GameState_GetCurrentGear() == REVERSE)
 			{
 				isAcceleratingBackward = true; // 후진
 			}
@@ -1751,7 +1730,7 @@ GLvoid KeyboardUp(unsigned char key, int x, int y)
 }
 void MouseButton(int button, int state, int x, int y)
 {
-	if (!pause_mode)
+	if (!GameState_IsPaused())
 	{
 		if (button == GLUT_LEFT_BUTTON)
 		{ // 좌클릭
