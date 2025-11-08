@@ -1,0 +1,5 @@
+﻿  Server.cpp
+C:\Users\mdk73\OneDrive\문서\GitHub\NGP_TermProject\Server\Server\Server.cpp(132,17): warning C4311: '형식 캐스트': 'LPVOID'에서 'int'(으)로 포인터가 잘립니다.
+C:\Users\mdk73\OneDrive\문서\GitHub\NGP_TermProject\Server\Server\Server.cpp(132,17): warning C4302: '형식 캐스트': 'LPVOID'에서 'int'(으)로 잘립니다.
+C:\Users\mdk73\OneDrive\문서\GitHub\NGP_TermProject\Server\Server\Server.cpp(311,99): warning C4312: '형식 캐스트': 'int'에서 더 큰 'LPVOID'(으)로의 변환입니다.
+C:\Users\mdk73\OneDrive\문서\GitHub\NGP_TermProject\Server\Server\Server.cpp(116,1): error C4716: 'Server_CheckGameOver': 값을 반환해야 합니다.

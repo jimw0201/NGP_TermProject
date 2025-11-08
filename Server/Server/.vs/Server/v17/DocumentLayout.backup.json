@@ -1,0 +1,37 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\mdk73\\OneDrive\\\uBB38\uC11C\\GitHub\\NGP_TermProject\\Server\\Server\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{64B25507-BC8D-413D-89B3-59836D48412D}|Server.vcxproj|C:\\Users\\mdk73\\OneDrive\\\uBB38\uC11C\\GitHub\\NGP_TermProject\\Server\\Server\\Server.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{64B25507-BC8D-413D-89B3-59836D48412D}|Server.vcxproj|solutionrelative:Server.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Server.cpp",
+              "DocumentMoniker": "C:\\Users\\mdk73\\OneDrive\\\uBB38\uC11C\\GitHub\\NGP_TermProject\\Server\\Server\\Server.cpp",
+              "RelativeDocumentMoniker": "Server.cpp",
+              "ToolTip": "C:\\Users\\mdk73\\OneDrive\\\uBB38\uC11C\\GitHub\\NGP_TermProject\\Server\\Server\\Server.cpp*",
+              "RelativeToolTip": "Server.cpp*",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAASAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-11-08T12:33:41.868Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
