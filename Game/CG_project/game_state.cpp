@@ -1,4 +1,9 @@
 #include "game_state.h"
+#include "car.h"
+#include "input_handle.h"
+#include "environment.h"
+#include <iostream>     
+#include <gl/freeglut.h>
 #include <ctime>
 
 // --- Private 전역 변수 ---
@@ -28,6 +33,52 @@ void GameState_Init()
     current_stage = 1;
     pause_mode = false;
     isClear = false;
+}
+
+void GameState_NextStage()
+{
+	// 1. 각도 및 입력 초기화
+	Car_SetRotationY(0.0f);
+	Car_SetFrontWheelRotationY(0.0f);
+	Car_SetWheelRotationX(0.0f);
+
+	Input_ResetHandle();
+
+	// 2. 기어 및 시간 초기화
+	GameState_SetCurrentGear(DRIVE);
+	GameState_UpdateStartTime(time(nullptr));
+	GameState_UpdatePauseTime(GameState_GetStartTime() - time(nullptr));
+
+	// 3. 상태 초기화
+	GameState_SetCrushed(false);
+	GameState_SetClear(false);
+	GameState_SetParked(false);
+	GameState_SetPaused(false);
+
+	// 4. 스테이지별 로직
+	if (current_stage == 1)
+	{
+		current_stage++;
+
+		// 환경(맵) 설정
+		Environment_SetupStage(2);
+
+		// 차 위치 설정
+		Car_SetPosition(2.0f, -4.0f);
+	}
+	else if (current_stage == 2)
+	{
+		current_stage++;
+
+		Environment_SetupStage(3);
+
+		Car_SetPosition(-4.0f, -4.0f);
+	}
+	else if (current_stage == 3)
+	{
+		std::cout << "--Clear!!!--\n";
+		glutLeaveMainLoop(); // 게임 종료
+	}
 }
 
 // --- Getters ---

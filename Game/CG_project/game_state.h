@@ -14,6 +14,8 @@ enum GearState
 // --- √ ±‚»≠ ---
 void GameState_Init();
 
+void GameState_NextStage();
+
 // --- Getters ---
 bool GameState_IsPaused();
 bool GameState_IsClear();

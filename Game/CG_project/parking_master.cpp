@@ -18,6 +18,7 @@
 #include "shader.h"
 #include "car.h"
 #include "input_handle.h"
+#include "environment.h"
 
 // 클라이언트
 #define clientWidth 900
@@ -32,16 +33,6 @@ GLfloat bColor = 1.0f;
 // 투영, 은면
 bool isProspect = true;
 bool isCull = false;
-
-
-// 도착 지점 위치 설정
-float FINISH_OFFSET_X = 0.0f; // X축 오프셋
-float FINISH_OFFSET_Z = 0.0f; // Z축 오프셋
-
-
-
-// 주차 상태를 나타내는 변수
-void UpdateParkingStatus(const std::vector<std::pair<float, float>>& carCorners);
 
 // 텍스트 렌더링 함수
 void RenderBitmapString(float x, float y, void* font, const char* string)
@@ -143,42 +134,6 @@ glm::mat4 Gear_Stick()
 	}
 
 	return T * Rx;
-}
-
-
-
-// 장애물 차 변환
-float obstacle_xz[5][2] = {
-	{FINISH_OFFSET_X - 1.05f, FINISH_OFFSET_Z},
-	{FINISH_OFFSET_X + 1.05f, FINISH_OFFSET_Z},
-	{FINISH_OFFSET_X - 1.05f * 2, FINISH_OFFSET_Z},
-	{FINISH_OFFSET_X + 1.05f * 2, FINISH_OFFSET_Z},
-	{100.0f, 100.0f}
-};
-glm::mat4 ObstacleCar(int index)
-{
-
-	glm::mat4 T = glm::mat4(1.0f);
-	glm::vec3 positions[] = {
-		glm::vec3(obstacle_xz[0][0], fy, obstacle_xz[0][1]),
-		glm::vec3(obstacle_xz[1][0], fy, obstacle_xz[1][1]),
-		glm::vec3(obstacle_xz[2][0], fy, obstacle_xz[2][1]),
-		glm::vec3(obstacle_xz[3][0], fy, obstacle_xz[3][1]),
-		glm::vec3(obstacle_xz[4][0], fy, obstacle_xz[4][1])
-	};
-
-	T = glm::translate(T, positions[index]);
-	return T;
-}
-
-// 도착지점 변환
-glm::mat4 FinishRect()
-{
-
-	glm::mat4 T = glm::mat4(1.0f);
-
-	T = glm::translate(T, glm::vec3(FINISH_OFFSET_X, fy, FINISH_OFFSET_Z));
-	return T;
 }
 
 // 후방 카메라 뷰
@@ -324,133 +279,6 @@ bool checkCollisionObstacle(const std::vector<std::pair<float, float>>& carCorne
 	return false; // 충돌 없음
 }
 
-// 주차 상태를 업데이트하는 함수
-float PARKING_X_MIN = -FINISH_SIZE / 2 + FINISH_OFFSET_X;
-float PARKING_X_MAX = FINISH_SIZE / 2 + FINISH_OFFSET_X;
-float PARKING_Z_MIN = -FINISH_SIZE * fheight + FINISH_OFFSET_Z;
-float PARKING_Z_MAX = FINISH_SIZE * fheight + FINISH_OFFSET_Z;
-void UpdateParkingStatus(const std::vector<std::pair<float, float>>& carCorners)
-{
-	bool newIsParked = false;
-	int checkCount = 0;
-	//std::cout << "==============================\n";
-	for (const auto& corner : carCorners)
-	{
-		float cornerX = corner.first;
-		float cornerZ = corner.second;
-		//std::cout << "x:" << cornerX << "\n";
-		//std::cout << "z:" << cornerZ << "\n";
-		if (PARKING_X_MIN <= cornerX && cornerX <= PARKING_X_MAX &&
-			PARKING_Z_MIN <= cornerZ && cornerZ <= PARKING_Z_MAX)
-		{
-			checkCount++;
-		}
-	}
-	if (checkCount >= 4)
-	{
-		newIsParked = true;
-	}
-
-	if (newIsParked != GameState_IsParked())
-	{
-		GameState_SetParked(newIsParked);
-	}
-}
-
-void nextStage()
-{
-	// 각도 초기화
-	Car_SetRotationY(0.0f);
-	Car_SetFrontWheelRotationY(0.0f);
-	Car_SetWheelRotationX(0.0f);
-
-	Input_ResetHandle();
-
-	// 기어 초기화
-	GameState_SetCurrentGear(DRIVE);
-
-	// 시간 초기화
-	GameState_UpdateStartTime(time(nullptr));
-	GameState_UpdatePauseTime(GameState_GetStartTime() - time(nullptr));
-
-	// 충돌여부 초기화
-	GameState_SetCrushed(false);
-
-	GameState_SetClear(false); 
-	GameState_SetParked(false);
-	GameState_SetPaused(false);
-
-	if (GameState_GetCurrentStage() == 1)
-	{
-		//next stage
-		GameState_SetCurrentStage(GameState_GetCurrentStage() + 1);
-
-		// 도착지점 위치 변경
-		FINISH_OFFSET_X = 3.0f;
-		FINISH_OFFSET_Z = 0.0f;
-
-		PARKING_X_MIN = -FINISH_SIZE / 2.0f + FINISH_OFFSET_X;
-		PARKING_X_MAX = FINISH_SIZE / 2.0f + FINISH_OFFSET_X;
-		PARKING_Z_MIN = -FINISH_SIZE * fheight + FINISH_OFFSET_Z;
-		PARKING_Z_MAX = FINISH_SIZE * fheight + FINISH_OFFSET_Z;
-
-		// 장애물 위치 변경
-		obstacle_xz[0][0] = FINISH_OFFSET_X;
-		obstacle_xz[0][1] = FINISH_OFFSET_Z + 1.55f;
-
-		obstacle_xz[1][0] = FINISH_OFFSET_X;
-		obstacle_xz[1][1] = FINISH_OFFSET_Z - 1.55f;
-
-		obstacle_xz[2][0] = FINISH_OFFSET_X - 1.05f;
-		obstacle_xz[2][1] = FINISH_OFFSET_Z - 1.55f;
-
-		obstacle_xz[3][0] = FINISH_OFFSET_X - 1.05f * 2.0f;
-		obstacle_xz[3][1] = FINISH_OFFSET_Z - 1.55f;
-
-		// 차 위치 변경
-		Car_SetPosition(2.0f, -4.0f);
-	}
-	else if (GameState_GetCurrentStage() == 2)
-	{
-		//next stage
-		GameState_SetCurrentStage(GameState_GetCurrentStage() + 1);
-
-		// 도착지점 위치 변경
-		FINISH_OFFSET_X = -2.0f;
-		FINISH_OFFSET_Z = -4.0f;
-
-		PARKING_X_MIN = -FINISH_SIZE / 2 + FINISH_OFFSET_X;
-		PARKING_X_MAX = FINISH_SIZE / 2 + FINISH_OFFSET_X;
-		PARKING_Z_MIN = -FINISH_SIZE * fheight + FINISH_OFFSET_Z;
-		PARKING_Z_MAX = FINISH_SIZE * fheight + FINISH_OFFSET_Z;
-
-		// 장애물 위치 변경
-		obstacle_xz[0][0] = FINISH_OFFSET_X - 1.05f;
-		obstacle_xz[0][1] = FINISH_OFFSET_Z;
-
-		obstacle_xz[1][0] = FINISH_OFFSET_X - 1.05f;
-		obstacle_xz[1][1] = FINISH_OFFSET_Z + 1.55f;
-
-		obstacle_xz[2][0] = FINISH_OFFSET_X;
-		obstacle_xz[2][1] = FINISH_OFFSET_Z + 1.55f;
-
-		obstacle_xz[3][0] = FINISH_OFFSET_X + 1.05f;
-		obstacle_xz[3][1] = FINISH_OFFSET_Z + 1.55f;
-
-		obstacle_xz[4][0] = FINISH_OFFSET_X + 1.05f;
-		obstacle_xz[4][1] = FINISH_OFFSET_Z + 1.55f * 2.0f;
-
-		// 차 위치 변경
-		Car_SetPosition(-4.0f, -4.0f);
-	}
-	else if (GameState_GetCurrentStage() == 3)
-	{
-		//finish
-		std::cout << "--Clear!!!--\n";
-		glutLeaveMainLoop(); // OpenGL 메인 루프 종료
-	}
-}
-
 // 자동차 이동 및 회전 애니메이션
 time_t currentTime;
 void TimerFunction_UpdateMove(int value)
@@ -467,7 +295,7 @@ void TimerFunction_UpdateMove(int value)
 	// 차량의 꼭짓점 계산
 	auto carCorners = Car_GetRotatedCorners();
 	// 주차 상태 업데이트
-	UpdateParkingStatus(carCorners);
+	Environment_UpdateParkingStatus(carCorners);
 
 	if (Car_GetSpeed() != 0.0f)
 	{
@@ -783,7 +611,7 @@ void drawFinishRect(int modelLoc)
 		glUniform3f(objColorLocation, 0.0f, 1.0f, 0.0f);
 	}
 	// 바닥
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(FinishRect()));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetFinishRectMatrix()));
 	glBindVertexArray(vao[5]);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -796,28 +624,28 @@ void drawObstacleCars(int modelLoc)
 	int objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	// 장식용 주차공간
 	glBindVertexArray(vao[8]);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(ObstacleCar(0)));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetObstacleMatrix(0)));
 	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glUniform3f(objColorLocation, 1.0f, 1.0f, 1.0f);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glUniform3f(objColorLocation, 0.5f, 0.5f, 0.5f);
 	glDrawArrays(GL_TRIANGLES, 6, 6);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(ObstacleCar(1)));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetObstacleMatrix(1)));
 	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glUniform3f(objColorLocation, 1.0f, 1.0f, 1.0f);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glUniform3f(objColorLocation, 0.5f, 0.5f, 0.5f);
 	glDrawArrays(GL_TRIANGLES, 6, 6);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(ObstacleCar(2)));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetObstacleMatrix(2)));
 	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glUniform3f(objColorLocation, 1.0f, 1.0f, 1.0f);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glUniform3f(objColorLocation, 0.5f, 0.5f, 0.5f);
 	glDrawArrays(GL_TRIANGLES, 6, 6);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(ObstacleCar(3)));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetObstacleMatrix(3)));
 	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glUniform3f(objColorLocation, 1.0f, 1.0f, 1.0f);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -826,7 +654,7 @@ void drawObstacleCars(int modelLoc)
 	glDrawArrays(GL_TRIANGLES, 6, 6);
 	if (GameState_GetCurrentStage() == 3)
 	{
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(ObstacleCar(4)));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetObstacleMatrix(4)));
 		objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 		glUniform3f(objColorLocation, 1.0f, 1.0f, 1.0f);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -839,17 +667,17 @@ void drawObstacleCars(int modelLoc)
 	glUniform3f(objColorLocation, 0.25f, 0.25f, 0.25f);
 	// 장애물
 	glBindVertexArray(vao[9]);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(ObstacleCar(0)));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetObstacleMatrix(0)));
 	glDrawArrays(GL_TRIANGLES, 0, TRI_COUNT * 3);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(ObstacleCar(1)));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetObstacleMatrix(1)));
 	glDrawArrays(GL_TRIANGLES, 0, TRI_COUNT * 3);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(ObstacleCar(2)));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetObstacleMatrix(2)));
 	glDrawArrays(GL_TRIANGLES, 0, TRI_COUNT * 3);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(ObstacleCar(3)));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetObstacleMatrix(3)));
 	glDrawArrays(GL_TRIANGLES, 0, TRI_COUNT * 3);
 	if (GameState_GetCurrentStage() == 3)
 	{
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(ObstacleCar(4)));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetObstacleMatrix(4)));
 		glDrawArrays(GL_TRIANGLES, 0, TRI_COUNT * 3);
 	}
 }

@@ -8,8 +8,6 @@
 
 #define M_PI 3.14159265358979323846
 
-extern void nextStage();
-
 static int lastMouseX = -1, lastMouseY = -1;
 static bool is_mouse_on_camera = false;
 static bool is_mouse_on_handle = false;
@@ -79,7 +77,7 @@ void Keyboard(unsigned char key, int x, int y)
     {
         if (key == 'n')
         {
-            nextStage(); // 다음 스테이지로 이동
+            GameState_NextStage(); // 다음 스테이지로 이동
         }
     }
     if (!GameState_IsClear())
