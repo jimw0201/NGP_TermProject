@@ -17,8 +17,7 @@
 #include "mesh.h"
 #include "shader.h"
 #include "car.h"
-
-#define M_PI 3.14159265358979323846
+#include "input_handle.h"
 
 // 클라이언트
 #define clientWidth 900
@@ -61,16 +60,7 @@ GLint width, height;
 // 필수 함수 정의
 GLvoid drawScene(GLvoid);
 GLvoid Reshape(int w, int h);
-GLvoid Keyboard(unsigned char key, int x, int y);
-GLvoid KeyboardUp(unsigned char key, int x, int y);
 //GLvoid SpecialKeyboard(int key, int x, int y);
-
-// 마우스 관련
-int lastMouseX = -1, lastMouseY = -1;
-bool is_mouse_on_camera = false;
-bool is_mouse_on_handle = false;
-void MouseMotion(int x, int y);
-void MouseButton(int button, int state, int x, int y);
 
 // 조명***
 bool isLight = true;	// 조명
@@ -81,11 +71,6 @@ GLfloat lightZ = 1.0f;
 GLfloat lightD = 1.0f;	//distance
 float light = 0.8f;
 
-
-// 핸들 변환 - 마우스에 따라 회전 적용
-float handle_rotateZ = 0.0f;
-float lastAngle = 0.0f;						// 이전 프레임의 각도
-float cumulativeAngle = 0.0f;				// 누적된 핸들 회전 각도
 glm::mat4 Handle()
 {
 	glm::mat4 T = glm::mat4(1.0f);			//--- 이동 행렬 선언
@@ -96,7 +81,7 @@ glm::mat4 Handle()
 	{
 		T = glm::translate(T, glm::vec3(0.0, HANDLE_SIZE - HANDLE_SIZE / 4, 0.1));
 		Rx = glm::rotate(Rx, glm::radians(90.0f), glm::vec3(1.0, 0.0, 0.0));
-		Rz = glm::rotate(Rz, glm::radians(handle_rotateZ), glm::vec3(0.0, 0.0, 1.0));
+		Rz = glm::rotate(Rz, glm::radians(Input_GetHandleRotation()), glm::vec3(0.0, 0.0, 1.0));
 	}
 
 	return Rz * T * Rx;
@@ -253,12 +238,6 @@ bool doLinesIntersect(float x1, float z1, float x2, float z2, float x3, float z3
 	return (d1 * d2 < 0 && d3 * d4 < 0); // 교차 조건
 }
 
-// 자동차 이동-회전 애니메이션 관련
-
-const float speed = 0.05f;
-const float HANDLE_RETURN_SPEED = 3.0f;		// 복원 속도
-const float CAR_SPEED = 0.05f;				// 자동차 이동 속도
-
 // 벽과 충돌하는 경우
 bool checkCollisionWalls(const std::vector<std::pair<float, float>>& carCorners, float wallX, float wallZ, float wallWidth, float wallHeight)
 {
@@ -385,9 +364,7 @@ void nextStage()
 	Car_SetFrontWheelRotationY(0.0f);
 	Car_SetWheelRotationX(0.0f);
 
-	cumulativeAngle = 0.0f;
-	handle_rotateZ = 0.0f;
-	lastAngle = 0.0f;
+	Input_ResetHandle();
 
 	// 기어 초기화
 	GameState_SetCurrentGear(DRIVE);
@@ -398,6 +375,10 @@ void nextStage()
 
 	// 충돌여부 초기화
 	GameState_SetCrushed(false);
+
+	GameState_SetClear(false); 
+	GameState_SetParked(false);
+	GameState_SetPaused(false);
 
 	if (GameState_GetCurrentStage() == 1)
 	{
@@ -474,7 +455,6 @@ void nextStage()
 time_t currentTime;
 void TimerFunction_UpdateMove(int value)
 {
-	Car_SetFrontWheelRotationY((handle_rotateZ / 900.0f) * 30.0f);
 
 	currentTime = time(nullptr);
 	if (!GameState_IsPaused())
@@ -538,35 +518,13 @@ void TimerFunction_UpdateMove(int value)
 		}
 	
 		// 핸들과 바퀴 복원 로직
-		if (!is_mouse_on_handle)
-		{
-			// 핸들 복원
-			if (handle_rotateZ > 0.0f)
-			{
-				handle_rotateZ = std::max(0.0f, handle_rotateZ - HANDLE_RETURN_SPEED); //HANDLE_RETURN_SPEED -> (MAX_SPEED = 0.01)일때 3.0가 적당
-			}
-			else if (handle_rotateZ < 0.0f)
-			{
-				handle_rotateZ = std::min(0.0f, handle_rotateZ + HANDLE_RETURN_SPEED);
-			}
-			cumulativeAngle = handle_rotateZ;
-
-			// 복원된 핸들 값에 따라 바퀴 회전량 동기화
-			Car_SetFrontWheelRotationY((handle_rotateZ / 900.0f) * 30.0f);
-		}
+		Input_UpdateHandleReturn();
 	}
 
 	// 화면 갱신 요청 및 타이머 재설정
 	glutPostRedisplay();
 	glutTimerFunc(TIMER_VELOCITY, TimerFunction_UpdateMove, 1);
 }
-
-// 카메라 초기 위치
-float c_dx = 0.0f;
-float c_dy = 1.0f;
-float c_dz = -3.0f;
-float c_angleY = 0.0f;
-float c_rotateY = 0.0f;
 
 // 메인 함수
 int main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
@@ -598,6 +556,8 @@ int main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
 
 	Car_Init();
 
+	Input_Init();
+
 	glEnable(GL_DEPTH_TEST);
 	// 자동체 액셀 브레이크 감지 - 이동 애니메이션
 	glutTimerFunc(TIMER_VELOCITY, TimerFunction_UpdateMove, 1);
@@ -619,7 +579,7 @@ int main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
 	glUniform3f(ablColorLocation, light, light, light);
 
 	unsigned int viewPosLocation = glGetUniformLocation(shaderProgramID, "viewPos");	//--- viewPos 값 전달: 카메라위치
-	glUniform3f(viewPosLocation, c_dx, c_dy, 0.0f);
+	glUniform3f(viewPosLocation, Input_GetCameraDX(), Input_GetCameraDY(), 0.0f);
 
 
 
@@ -944,11 +904,11 @@ void drawScene()
 			glm::vec3 orbitCenter = glm::vec3(Car_GetDX(), Car_GetDY(), Car_GetDZ());
 
 			// 카메라 위치 계산
-			float cameraDistance = c_dz; // `c_dz`를 카메라 거리로 사용
+			float cameraDistance = Input_GetCameraDZ();
 			glm::vec3 cameraDirection = glm::vec3(0.0f, 0.0f, -1.0f);
 			glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
-			glm::mat4 cameraRotateMat = glm::rotate(glm::mat4(1.0f), glm::radians(c_rotateY), glm::vec3(0.0, 1.0, 0.0));
+			glm::mat4 cameraRotateMat = glm::rotate(glm::mat4(1.0f), glm::radians(Input_GetCameraRotateY()), glm::vec3(0.0, 1.0, 0.0));
 			glm::vec3 cameraOffset = glm::vec3(cameraRotateMat * glm::vec4(0.0f, 1.9f, cameraDistance, 1.0f)); // Y축으로 살짝 올림
 			glm::vec3 cameraPos = orbitCenter + cameraOffset;
 
@@ -1289,217 +1249,3 @@ GLvoid Reshape(int w, int h) //--- 콜백 함수: 다시 그리기 콜백 함수
 {
 	glViewport(0, 0, w, h);
 }
-
-GLvoid Keyboard(unsigned char key, int x, int y)
-{
-	if (key == 'b')
-	{
-		//디버그
-		nextStage();
-	}
-	if (key == 'n')
-	{
-		if (GameState_IsClear())
-		{
-			nextStage();
-			GameState_SetPaused(false);
-			GameState_SetClear(false);
-		}
-	}
-	if (!GameState_IsClear())
-	{
-		if (key == 27) // ESC 키
-		{
-			if (GameState_IsPaused()) //해제
-			{
-				//startTime = time(nullptr) - (pauseTime - startTime); // 정지 시간만큼 보정
-				GameState_UpdatePauseTime(GameState_GetPauseTime() + time(nullptr) - GameState_GetTempTime());
-				GameState_SetPaused(false);
-			}
-			else //정지
-			{
-				GameState_UpdateTempTime(currentTime);
-				GameState_SetPaused(true);
-			}
-		}
-	}
-	if (!GameState_IsPaused())
-	{
-		switch (key)
-		{
-		case 'i':
-		{
-			if (GameState_IsInvincible())
-				GameState_SetInvincible(false);
-			else
-				GameState_SetInvincible(true);
-			break;
-		}
-		case 'q': // 이전 기어
-		{
-			if (GameState_GetCurrentGear() > PARK)
-				GameState_SetCurrentGear(static_cast<GearState>(GameState_GetCurrentGear() - 1));
-
-			if (GameState_GetCurrentGear() == PARK)
-			{
-				if (GameState_IsParked())
-				{
-					GameState_SetPaused(true);
-					GameState_SetClear(true);
-				}
-			}
-			break;
-		}
-		case 'e': // 다음 기어
-		{
-			if (GameState_GetCurrentGear() < DRIVE)
-				GameState_SetCurrentGear(static_cast<GearState>(GameState_GetCurrentGear() + 1));
-			break;
-		}
-		case 'w': // 액셀
-		{
-			if (GameState_GetCurrentGear() == DRIVE)
-			{
-				Car_SetAcceleratingForward(true); // 전진
-			}
-			else if (GameState_GetCurrentGear() == REVERSE)
-			{
-				Car_SetAcceleratingBackward(true); // 후진
-			}
-			break;
-		}
-		case ' ': // 브레이크
-		{
-			// isAcceleratingForward = false;
-			// isAcceleratingBackward = true;
-			Car_SetBraking(true);
-			break;
-		}
-		}
-	}
-	glutPostRedisplay(); //--- refresh
-}
-GLvoid KeyboardUp(unsigned char key, int x, int y)
-{
-	switch (key)
-	{
-	case 'w': // 액셀 해제
-	{
-		Car_SetAcceleratingForward(false);
-		Car_SetAcceleratingBackward(false);
-		break;
-	}
-	case ' ': // 액셀 해제
-	{
-		Car_SetBraking(false);
-		break;
-	}
-	}
-	glutPostRedisplay(); //--- refresh
-}
-void MouseButton(int button, int state, int x, int y)
-{
-	if (!GameState_IsPaused())
-	{
-		if (button == GLUT_LEFT_BUTTON)
-		{ // 좌클릭
-			if (state == GLUT_DOWN)
-			{
-				if (x > 600 && y > 300) //750, 450이 핸들의 중심좌표
-				{
-					lastAngle = 0.0f;
-					is_mouse_on_handle = true;
-					//std::cout << "x :" << x << "  y :" << y << std::endl;
-				}
-				else
-				{
-					is_mouse_on_camera = true; // 마우스 눌림 상태
-					lastMouseX = x;           // 초기 위치 저장
-				}
-			}
-			else if (state == GLUT_UP)
-			{
-				if (is_mouse_on_handle)
-				{
-					lastAngle = 0.0f;
-					is_mouse_on_handle = false;
-				}
-				if (is_mouse_on_camera)
-				{
-					is_mouse_on_camera = false; // 마우스 떼기 상태
-					lastMouseX = -1;           // 초기화
-				}
-			}
-		}
-		else if (button == 3)
-		{ // 휠 위로 스크롤
-			c_dz -= 0.1f;       // 카메라를 앞으로 이동
-			glutPostRedisplay(); // 화면 갱신 요청
-		}
-		else if (button == 4)
-		{ // 휠 아래로 스크롤
-			c_dz += 0.1f;       // 카메라를 뒤로 이동
-			glutPostRedisplay(); // 화면 갱신 요청
-		}
-	}
-}
-void MouseMotion(int x, int y)
-{
-	if (is_mouse_on_handle)
-	{
-		// 기준점과 현재 마우스 위치의 상대 위치 계산
-		int dx = x - 750;
-		int dy = y - 450;
-
-		// 기준 각도를 y축 음의 방향으로 설정
-		float currentAngle = float(-atan2(dx, -dy)) * (180.0f / M_PI);
-
-		// 각도 차이 계산 (누적 회전을 위해)
-		float deltaAngle;
-		deltaAngle = currentAngle - lastAngle;
-
-		// 경계 처리 (-180 ~ 180 사이의 점프 방지)
-		if (deltaAngle > 180.0f)
-			deltaAngle -= 360.0f;
-		else if (deltaAngle < -180.0f)
-			deltaAngle += 360.0f;
-
-		// 회전 누적
-		if (-900.0f <= handle_rotateZ && handle_rotateZ <= 900.0f)
-		{
-			cumulativeAngle += deltaAngle;
-			if (cumulativeAngle > 900.0f)
-				cumulativeAngle = 900.0f;
-			else if (cumulativeAngle < -900.0f)
-				cumulativeAngle = -900.0f;
-
-			// handle_rotateZ 업데이트 (누적 각도)
-			handle_rotateZ = cumulativeAngle;
-		}
-
-		// 현재 각도를 저장 (다음 프레임 비교를 위해)
-		lastAngle = currentAngle;
-	}
-	if (is_mouse_on_camera)
-	{
-		if (lastMouseX == -1)
-		{
-			// 초기 마우스 위치 저장
-			lastMouseX = x;
-			return;
-		}
-		// 마우스 이동 차이 계산
-		int dx = x - lastMouseX;
-
-		// Y축 회전 갱신 (좌우 이동)
-		c_rotateY += dx * 0.1f;
-
-		// 갱신된 위치를 저장
-		lastMouseX = x;
-	}
-	// 화면 갱신 요청
-	glutPostRedisplay();
-}
-
-
-
