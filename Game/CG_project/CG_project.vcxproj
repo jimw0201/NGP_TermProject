@@ -136,6 +136,7 @@
     <ClCompile Include="input_handle.cpp" />
     <ClCompile Include="mesh.cpp" />
     <ClCompile Include="parking_master.cpp" />
+    <ClCompile Include="renderer.cpp" />
     <ClCompile Include="shader.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -149,6 +150,7 @@
     <ClInclude Include="game_state.h" />
     <ClInclude Include="input_handle.h" />
     <ClInclude Include="mesh.h" />
+    <ClInclude Include="renderer.h" />
     <ClInclude Include="shader.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
