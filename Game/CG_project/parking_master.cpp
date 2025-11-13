@@ -19,6 +19,7 @@
 #include "car.h"
 #include "input_handle.h"
 #include "environment.h"
+#include "collision.h"
 
 // 클라이언트
 #define clientWidth 900
@@ -152,131 +153,6 @@ glm::mat4 RearCameraView()
 	glm::vec3 upVector(0.0f, 1.0f, 0.0f); // 월드 업 벡터
 
 	return glm::lookAt(cameraPosition, lookAtTarget, upVector);
-}
-
-// 점이 다각형 내부에 있는지 검사 (반직선 교차법)
-bool isPointInsidePolygon(const std::vector<std::pair<float, float>>& polygon, float x, float z)
-{
-	int intersections = 0;
-	int n = polygon.size();
-	for (int i = 0; i < n; ++i)
-	{
-		auto p1 = polygon[i];
-		auto p2 = polygon[(i + 1) % n];
-
-		// 두 점이 z축 방향에서 교차하는지 확인
-		if ((p1.second > z) != (p2.second > z))
-		{
-			float intersectionX = p1.first + (z - p1.second) * (p2.first - p1.first) / (p2.second - p1.second);
-			if (intersectionX > x)
-			{
-				intersections++;
-			}
-		}
-	}
-	return intersections % 2 == 1; // 홀수 교차이면 내부
-}
-
-// 선분 교차 검사
-bool doLinesIntersect(float x1, float z1, float x2, float z2, float x3, float z3, float x4, float z4)
-{
-	auto cross = [](float ax, float ay, float bx, float by)
-		{
-			return ax * by - ay * bx;
-		};
-
-	float d1 = cross(x3 - x1, z3 - z1, x4 - x1, z4 - z1);
-	float d2 = cross(x3 - x2, z3 - z2, x4 - x2, z4 - z2);
-	float d3 = cross(x1 - x3, z1 - z3, x2 - x3, z2 - z3);
-	float d4 = cross(x1 - x4, z1 - z4, x2 - x4, z2 - z4);
-
-	return (d1 * d2 < 0 && d3 * d4 < 0); // 교차 조건
-}
-
-// 벽과 충돌하는 경우
-bool checkCollisionWalls(const std::vector<std::pair<float, float>>& carCorners, float wallX, float wallZ, float wallWidth, float wallHeight)
-{
-	// 벽의 AABB
-	float wallMinX = wallX - wallWidth / 2;
-	float wallMaxX = wallX + wallWidth / 2;
-	float wallMinZ = wallZ - wallHeight / 2;
-	float wallMaxZ = wallZ + wallHeight / 2;
-
-	// 차량 꼭짓점 중 하나라도 충돌하면 true
-	for (const auto& corner : carCorners)
-	{
-		float cornerX = corner.first;
-		float cornerZ = corner.second;
-
-		if (cornerX > wallMinX && cornerX < wallMaxX &&
-			cornerZ > wallMinZ && cornerZ < wallMaxZ)
-		{
-			return true;
-		}
-	}
-
-	// 충돌 없음
-	return false;
-}
-
-// 장애물과 충돌하는 경우
-bool checkCollisionObstacle(const std::vector<std::pair<float, float>>& carCorners)
-{
-	// 각 장애물에 대해 충돌 여부를 확인
-	for (const auto& obstacle : obstacle_xz)
-	{
-		float obstacleMinX = obstacle[0] - OBSTACLE_WIDTH;
-		float obstacleMaxX = obstacle[0] + OBSTACLE_WIDTH;
-		float obstacleMinZ = obstacle[1] - OBSTACLE_HEIGHT;
-		float obstacleMaxZ = obstacle[1] + OBSTACLE_HEIGHT;
-
-		// 차량의 꼭짓점이 장애물 영역에 있는지 확인
-		for (const auto& corner : carCorners)
-		{
-			if (obstacleMinX <= corner.first && corner.first <= obstacleMaxX &&
-				obstacleMinZ <= corner.second && corner.second <= obstacleMaxZ)
-			{
-				return true; // 차량 꼭짓점이 장애물 내부에 있음
-			}
-		}
-
-		// 장애물의 사각형 꼭짓점을 계산
-		std::vector<std::pair<float, float>> obstacleCorners = {
-			{obstacleMinX, obstacleMinZ},
-			{obstacleMaxX, obstacleMinZ},
-			{obstacleMaxX, obstacleMaxZ},
-			{obstacleMinX, obstacleMaxZ}
-		};
-
-		// 장애물의 꼭짓점이 차량 내부에 있는지 확인
-		for (const auto& corner : obstacleCorners)
-		{
-			if (isPointInsidePolygon(carCorners, corner.first, corner.second))
-			{
-				return true; // 장애물 꼭짓점이 차량 내부에 있음
-			}
-		}
-
-		// 차량의 모서리와 장애물의 모서리가 교차하는지 확인
-		int carSize = carCorners.size();
-		int obstacleSize = obstacleCorners.size();
-		for (int i = 0; i < carSize; ++i)
-		{
-			for (int j = 0; j < obstacleSize; ++j)
-			{
-				if (doLinesIntersect(
-					carCorners[i].first, carCorners[i].second,
-					carCorners[(i + 1) % carSize].first, carCorners[(i + 1) % carSize].second,
-					obstacleCorners[j].first, obstacleCorners[j].second,
-					obstacleCorners[(j + 1) % obstacleSize].first, obstacleCorners[(j + 1) % obstacleSize].second))
-				{
-					return true; // 차량 모서리와 장애물 모서리가 교차
-				}
-			}
-		}
-	}
-
-	return false; // 충돌 없음
 }
 
 // 자동차 이동 및 회전 애니메이션

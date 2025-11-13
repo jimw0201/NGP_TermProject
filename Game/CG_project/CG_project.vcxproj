@@ -130,6 +130,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="car.cpp" />
+    <ClCompile Include="collision.cpp" />
     <ClCompile Include="environment.cpp" />
     <ClCompile Include="game_state.cpp" />
     <ClCompile Include="input_handle.cpp" />
@@ -143,6 +144,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="car.h" />
+    <ClInclude Include="collision.h" />
     <ClInclude Include="environment.h" />
     <ClInclude Include="game_state.h" />
     <ClInclude Include="input_handle.h" />
