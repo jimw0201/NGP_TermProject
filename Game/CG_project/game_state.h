@@ -15,6 +15,7 @@ enum GearState
 void GameState_Init();
 
 void GameState_NextStage();
+void GameState_TimerLoop(int value);
 
 // --- Getters ---
 bool GameState_IsPaused();
