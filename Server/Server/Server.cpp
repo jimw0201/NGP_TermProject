@@ -5,90 +5,20 @@
 #include <ws2tcpip.h>
 #include <windows.h>
 #include <process.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <vector>
+#include "Protocol.h"
+#include "GameLogic.h"
 
-#define MAX_PLAYERS 4
 #define TCP_PORT 9000
 #define UDP_PORT 9001
 #define TIMER_VELOCITY 16
 
-
-enum GearState {PARK, REVERSE, NEUTRAL, DRIVE};
-
-struct PlayerKey {
-	bool W_Pressed;
-	bool SPACE_Pressed;
-	bool Q_Pressed;
-	bool E_Pressed;
-
-	float handle_rotate_z;
-};
-
-struct PlayerData {
-	int playerID;
-	
-	float car_dx;
-	float car_dy;
-	float car_dz;
-	float car_rotateY;
-
-	float front_wheels_rotateY;
-	float wheel_rect_rotateX;
-
-	GearState currentGear;
-};
-
-struct PlayerGameStats {
-	int PlayerID;
-	int CollisionCount;
-	float ParkingSec;
-	bool IsParked;
-	bool IsEnterParking;
-};
-
-enum PacketType : uint8_t {
-	C2S_PlayerUpdate = 0,
-	S2C_GameStart,
-	S2C_GameStateUpdate,
-	S2C_GameOver,
-	C2S_ReportParked,
-	C2S_GameReady,
-};
-
-struct C2S_PlayerUpdatePacket {
-	PacketType type = C2S_PlayerUpdate;
-	int playerID;
-	PlayerKey myData;
-};
-
-struct S2C_GameStateUpdatePacket {
-	PacketType type = S2C_GameStateUpdate;
-	int srvElapsedSec;
-	PlayerData PlayerStates[MAX_PLAYERS];
-	PlayerGameStats PlayerStats[MAX_PLAYERS];
-};
-
-struct C2S_ReportParkedPacket {
-	PacketType type = C2S_ReportParked;
-	int PlayerID;
-};
-
-struct ClientInfo {
-	bool IsConnected;
-	int PlayerID;
-
-	SOCKET TCPSocket;
-	HANDLE hTCPThread;
-
-	sockaddr_in UDPaddr;
-	bool UDPAddrInitialized;
-
-	PlayerKey LastReceivedKeys;
-
-	PlayerData playerData;
-	PlayerGameStats playerStats;
+const float g_round1_StartPos[MAX_PLAYERS][3] = {
+    {0.0f, -4.0f, 0.0f},
+    {0.0f, 4.0f, 180.0f},
+    {4.0f, 0.0f, -90.0f},
+    {-4.0f, 0.0f, 90.0f}
 };
 
 CRITICAL_SECTION g_cs;
@@ -98,22 +28,6 @@ int g_connectedClients = 0;
 SOCKET g_UDPSocket;
 bool g_IsGameRunning;
 DWORD g_GameStartTime;
-
-void Server_HandleNC(SOCKET newTCP_Socket, int PlayerID) {
-
-}
-
-void Server_movement(int PlayerID) {
-
-}
-
-void Server_CheckAllCollisions() {
-
-}
-
-bool Server_CheckGameOver() {
-
-}
 
 void err_quit(const char* msg)
 {
@@ -149,7 +63,13 @@ unsigned int WINAPI TCP_HandleClient(LPVOID arg) {
 			g_clients[pkt->PlayerID].playerStats.ParkingSec = (float)(GetTickCount() - g_GameStartTime) / 1000.0f;
 			LeaveCriticalSection(&g_cs);
 
-			Server_CheckGameOver();
+            bool isGameOver = Server_CheckGameOver();
+
+            if (isGameOver) {
+                printf("[Game] 모든 플레이어 주차 완료! 라운드 점수 계산을 시작합니다....\n");
+
+                // 여기 EndMatch()관련 내용 넣으면 됨
+            }
 		}
 	}
 
@@ -204,9 +124,15 @@ unsigned int WINAPI Server_UDP(LPVOID arg) {
 unsigned int WINAPI Server_GameLoop(LPVOID arg) {
     printf("[Game] 게임 루프 스레드 시작 (Tick: %dms)\n", TIMER_VELOCITY);
 
+    S2C_GameStateUpdatePacket updatePkt;
+
     while (true) {
         if (!g_IsGameRunning) {
-
+            if (g_connectedClients == MAX_PLAYERS) {
+                printf("[Game] 4명 접속 완료. 게임을 시작합니다.\n");
+                g_GameStartTime = GetTickCount();
+                g_IsGameRunning = true;
+            }
             Sleep(100);
             continue;
         }
@@ -214,39 +140,29 @@ unsigned int WINAPI Server_GameLoop(LPVOID arg) {
         DWORD frameStartTime = GetTickCount();
 
         EnterCriticalSection(&g_cs);
-        for (int i = 0; i < MAX_PLAYERS; i++) {
-            if (g_clients[i].IsConnected) {
-                Server_movement(i);
-            }
-        }
-        LeaveCriticalSection(&g_cs);
-
-
-        EnterCriticalSection(&g_cs);
-        Server_CheckAllCollisions();
-        LeaveCriticalSection(&g_cs);
-
-
-        S2C_GameStateUpdatePacket updatePkt;
-        updatePkt.srvElapsedSec = (GetTickCount() - g_GameStartTime) / 1000;
-
-        EnterCriticalSection(&g_cs);
         {
-            // 전역 상태를 패킷에 복사
+            for (int i = 0; i < MAX_PLAYERS; i++) {
+                if (g_clients[i].IsConnected) {
+                    Server_movement(i);
+                }
+            }
+            Server_CheckAllCollisions();
+
+            updatePkt.srvElapsedSec = (GetTickCount() - g_GameStartTime) / 1000;
             for (int i = 0; i < MAX_PLAYERS; i++) {
                 updatePkt.PlayerStates[i] = g_clients[i].playerData;
                 updatePkt.PlayerStats[i] = g_clients[i].playerStats;
             }
-
-            // 모든 "접속+UDP주소등록 완료"된 클라이언트에게 전송 (Unicast) 
-            for (int i = 0; i < MAX_PLAYERS; i++) {
-                if (g_clients[i].IsConnected && g_clients[i].UDPAddrInitialized) {
-                    sendto(g_UDPSocket, (char*)&updatePkt, sizeof(updatePkt), 0,
-                        (sockaddr*)&g_clients[i].UDPaddr, sizeof(g_clients[i].UDPaddr));
-                }
-            }
         }
         LeaveCriticalSection(&g_cs);
+
+        
+        for (int i = 0; i < MAX_PLAYERS; i++) {
+            if (g_clients[i].IsConnected && g_clients[i].UDPAddrInitialized) {
+                sendto(g_UDPSocket, (char*)&updatePkt, sizeof(updatePkt), 0, 
+                    (sockaddr*)&g_clients[i].UDPaddr, sizeof(g_clients[i].UDPaddr));
+            }
+        }
 
         DWORD frameTime = GetTickCount() - frameStartTime;
         if (frameTime < TIMER_VELOCITY) {
@@ -293,6 +209,13 @@ int main(int argc, char* argv[]) {
         if (clientTcpSocket == INVALID_SOCKET) {
             printf("[오류] TCP accept() 실패\n");
             continue;
+        }
+
+        BOOL optval = TRUE;
+        int optlen = sizeof(optval);
+        if (setsockopt(clientTcpSocket, IPPROTO_TCP, TCP_NODELAY,
+            (const char*)&optval, optlen) == SOCKET_ERROR) {
+            printf("[경고] TCP_NODELAY 설정 실패 (Socket: %llu)\n", clientTcpSocket);
         }
 
         int newPlayerID = -1;
