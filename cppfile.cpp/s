@@ -1,1 +1,31 @@
-s
+// 서버에서 각 클라에게 ID를 배정하는 순간 PlayerID를 클라에게 전송해주는 코드
+//  메인, while(1)안에 넣기
+
+While(1){
+  // accept
+  int newPlayerId = 0;
+  if(clientSock != INVALID SOCKET){
+  printf("새로운 클라이언트 접속");
+  
+  //PlayerId 등록
+  Server_HandleNC(clientTcpSocket, newPlayerID);
+  g_clients[newPlayerID].hTCPThread = (HANDLE)_beginthreadex(NULL, 0, TCP_HandleClient, (LPVOID)newPlayerID, 0, NULL);
+
+  // 패킷 등록
+  S2C_PlayerIdResponse packet;
+  packet.PlayerID = newPlayerId;
+
+  // PlayerId 클라에게 보내기
+  int sendId = send(clientSocket,(char*)&packet,sizeof(packet), 0);
+
+  if(sendId == SOCKET_ERROR){
+    printf("전송 실패 에러 코드 : %d\n", WSAGetLastError());
+    }
+  else{
+    printf("전송 성공\n");
+  }
+  
+  newPlayerId++;
+}
+  
+  
