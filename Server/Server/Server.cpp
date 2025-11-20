@@ -143,10 +143,10 @@ unsigned int WINAPI Server_GameLoop(LPVOID arg) {
         {
             for (int i = 0; i < MAX_PLAYERS; i++) {
                 if (g_clients[i].IsConnected) {
-                    Server_movement(i);
+                    Server_movement(i);     // 물리 연산
                 }
             }
-            Server_CheckAllCollisions();
+            Server_CheckAllCollisions();    // 충돌 판정
 
             updatePkt.srvElapsedSec = (GetTickCount() - g_GameStartTime) / 1000;
             for (int i = 0; i < MAX_PLAYERS; i++) {
@@ -175,11 +175,13 @@ unsigned int WINAPI Server_GameLoop(LPVOID arg) {
 
 int main(int argc, char* argv[]) {
     InitializeCriticalSection(&g_cs);
+    // 클라이언트 정보 배열 초기화
     memset(g_clients, 0, sizeof(g_clients));
 
     WSADATA wsa;
     if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) return 1;
 
+    // TCP 연결 설정
     SOCKET TCP_ListenSock = socket(AF_INET, SOCK_STREAM, 0);
     sockaddr_in tcpAddr;
     memset(&tcpAddr, 0, sizeof(tcpAddr));
@@ -189,6 +191,7 @@ int main(int argc, char* argv[]) {
     if (bind(TCP_ListenSock, (SOCKADDR*)&tcpAddr, sizeof(tcpAddr)) == SOCKET_ERROR) err_quit("TCP bind()");
     if (listen(TCP_ListenSock, SOMAXCONN) == SOCKET_ERROR) err_quit("TCP listen()");
 
+    // UDP 연결 설정
     g_UDPSocket = socket(AF_INET, SOCK_DGRAM, 0);
     sockaddr_in udpAddr;
     memset(&udpAddr, 0, sizeof(udpAddr));
@@ -197,20 +200,24 @@ int main(int argc, char* argv[]) {
     udpAddr.sin_port = htons(UDP_PORT);
     if (bind(g_UDPSocket, (SOCKADDR*)&udpAddr, sizeof(udpAddr)) == SOCKET_ERROR) err_quit("UDP bind()");
 
+    // UDP 패킷 처리하는 스레드 실행
     _beginthreadex(NULL, 0, Server_UDP, NULL, 0, NULL);
 
+    // 물리 연산, 충돌 체크, 클라이언트 상태 업데이트용 스레드 실행
     _beginthreadex(NULL, 0, Server_GameLoop, NULL, 0, NULL);
 
     printf(">> 주차의 달인 게임 서버 실행 [TCP Port: %d, UDP Port: %d]\n", TCP_PORT, UDP_PORT);
     printf(">> 클라이언트 접속 대기 중...\n");
 
     while (true) {
+        // TCP 연결 수락
         SOCKET clientTcpSocket = accept(TCP_ListenSock, NULL, NULL);
         if (clientTcpSocket == INVALID_SOCKET) {
             printf("[오류] TCP accept() 실패\n");
             continue;
         }
 
+        // Nagle 알고리즘 설정
         BOOL optval = TRUE;
         int optlen = sizeof(optval);
         if (setsockopt(clientTcpSocket, IPPROTO_TCP, TCP_NODELAY,
@@ -218,6 +225,8 @@ int main(int argc, char* argv[]) {
             printf("[경고] TCP_NODELAY 설정 실패 (Socket: %llu)\n", clientTcpSocket);
         }
 
+        // 빈 슬롯(PlayerID) 찾기
+        // 최대 플레이어 수 내에서 빈 자리를 찾아 ID를 할당
         int newPlayerID = -1;
         EnterCriticalSection(&g_cs);
         for (int i = 0; i < MAX_PLAYERS; i++) {
@@ -229,14 +238,19 @@ int main(int argc, char* argv[]) {
         LeaveCriticalSection(&g_cs);
 
         if (newPlayerID != -1) {
+            // 신규 클라이언트 초기화
             Server_HandleNC(clientTcpSocket, newPlayerID);
 
+            // 해당 클라이언트 전담 TCP 수신 스레드 생성
+            // ClientInfo 구조체에 스레드 핸들 저장
             g_clients[newPlayerID].hTCPThread = (HANDLE)_beginthreadex(NULL, 0, TCP_HandleClient, (LPVOID)newPlayerID, 0, NULL);
         }
         else {
             printf("[접속 거부] 서버가 꽉 찼습니다.\n");
             closesocket(clientTcpSocket);
         }
+
+        // 여기 코드 복붙(ID 전송 코드)
     }
 
     closesocket(TCP_ListenSock);

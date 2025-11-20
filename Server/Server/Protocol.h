@@ -68,20 +68,21 @@ struct C2S_ReportParkedPacket {
 };
 
 struct ClientInfo {
-	bool IsConnected;
-	int PlayerID;
+	bool IsConnected;				// 현재 접속 상태
+	int PlayerID;					// 0~3 할당된 플레이어
 
 	SOCKET TCPSocket;
-	HANDLE hTCPThread;
+	HANDLE hTCPThread;				// 각 클랑이언트의 TCP 처리 스레드 핸들
 
 	sockaddr_in UDPaddr;
-	bool UDPAddrInitialized;
+	bool UDPAddrInitialized;		// UDP 주소 등록 여부
 
 	PlayerKey LastReceivedKeys;
 
 	PlayerData playerData;
 	PlayerGameStats playerStats;
 
+	// Rising-Edge용 직전에 키 눌렸는지 확인하는 변수
 	bool Q_PrevServerState = false;
 	bool E_PrevServerState = false;
 };
