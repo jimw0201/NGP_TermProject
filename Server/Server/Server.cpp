@@ -250,7 +250,33 @@ int main(int argc, char* argv[]) {
             closesocket(clientTcpSocket);
         }
 
-        // 여기 코드 복붙(ID 전송 코드)
+        if (newPlayerID != -1) {
+            // 1. 서버 메모리에 클라이언트 정보 등록 및 초기화
+            Server_HandleNC(clientTcpSocket, newPlayerID);
+
+            // 2. 해당 클라이언트의 TCP 통신을 담당할 스레드 시작
+            g_clients[newPlayerID].hTCPThread = (HANDLE)_beginthreadex(NULL, 0, TCP_HandleClient, (LPVOID)newPlayerID, 0, NULL);
+
+            // 3. ID 할당 패킷 생성
+            S2C_PlayerIdResponsePacket packet;
+            packet.type = S2C_PlayerIdResponse;
+            packet.PlayerID = newPlayerID;
+
+            // 4. 패킷 전송
+            int sendResult = send(clientTcpSocket, (char*)&packet, sizeof(packet), 0);
+
+            if (sendResult == SOCKET_ERROR) {
+                printf("[오류] ID 패킷 전송 실패 (Error: %d)\n", WSAGetLastError());
+            }
+            else {
+                printf("[전송] 클라이언트에게 ID(%d) 할당 패킷 전송 완료\n", newPlayerID);
+            }
+        }
+        else {
+            // 빈 자리가 없으면 접속 거부
+            printf("[접속 거부] 서버가 꽉 찼습니다.\n");
+            closesocket(clientTcpSocket);
+        }
     }
 
     closesocket(TCP_ListenSock);

@@ -47,6 +47,7 @@ enum PacketType : uint8_t {
 	S2C_GameOver,
 	C2S_ReportParked,
 	C2S_GameReady,
+	S2C_PlayerIdResponse,
 };
 
 struct C2S_PlayerUpdatePacket {
@@ -85,6 +86,11 @@ struct ClientInfo {
 	// Rising-Edge용 직전에 키 눌렸는지 확인하는 변수
 	bool Q_PrevServerState = false;
 	bool E_PrevServerState = false;
+};
+
+struct S2C_PlayerIdResponsePacket {
+	PacketType type = S2C_PlayerIdResponse;
+	int PlayerID;
 };
 
 #endif
