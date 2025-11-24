@@ -23,6 +23,8 @@ static int current_stage = 1;
 static bool pause_mode = false;
 static bool isClear = false;
 
+// 각 차량의 현재 입력 상태 (멀티 대비용)
+static CarInput g_carInputs[kCarCount];
 
 // --- 함수 구현 ---
 void GameState_Init()
@@ -85,6 +87,28 @@ void GameState_NextStage()
 	}
 }
 
+// 현재 로컬(단일) 입력 상태를 CarInput 배열에 복사
+static void GameState_FillInputsFromSingleLocal()
+{
+    // car.cpp의 전역 입력 상태 읽기
+    bool  accelF = Car_IsAcceleratingForward();
+    bool  accelB = Car_IsAcceleratingBackward();
+    bool  brake = Car_IsBraking();
+    float steer = Car_GetFrontWheelRotationY();
+    GearState gear = GameState_GetCurrentGear();
+
+    // 일단은 4대 모두 같은 입력으로 채움
+    for (int i = 0; i < Car_Count(); ++i)
+    {
+        g_carInputs[i].accelForward = accelF;
+        g_carInputs[i].accelBackward = accelB;
+        g_carInputs[i].brake = brake;
+        g_carInputs[i].steering = steer;
+        g_carInputs[i].gear = gear;
+    }
+}
+
+
 void GameState_TimerLoop(int value)
 {
     time_t currentTime = time(nullptr);
@@ -94,6 +118,9 @@ void GameState_TimerLoop(int value)
         GameState_SetElapsedSeconds(
             static_cast<int>(currentTime - GameState_GetPauseTime() - GameState_GetStartTime()));
     }
+
+    // 이번 프레임의 입력 상태를 CarInput 배열에 정리
+    GameState_FillInputsFromSingleLocal();
 
     // 1) 현재 기어 상태 가져오기
     GearState gear = GameState_GetCurrentGear();
@@ -198,6 +225,16 @@ void GameState_TimerLoop(int value)
 
     glutPostRedisplay();
     glutTimerFunc(16, GameState_TimerLoop, 1);
+}
+
+CarInput* GameState_GetCarInputs()
+{
+    return g_carInputs;
+}
+
+const CarInput& GameState_GetCarInput(int idx)
+{
+    return g_carInputs[idx];
 }
 
 

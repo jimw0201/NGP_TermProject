@@ -12,6 +12,16 @@ enum GearState
 	DRIVE
 };
 
+// 멀티 대비용: 한 차량의 입력 상태
+struct CarInput
+{
+    bool accelForward;    // 가속 (전진)
+    bool accelBackward;   // 가속 (후진)
+    bool brake;           // 브레이크
+    float steering;       // 조향각 (front_wheels_rotateY)
+    GearState gear;       // 현재 기어 상태
+};
+
 // 초기화
 void GameState_Init();
 
@@ -45,6 +55,10 @@ void GameState_SetCurrentGear(GearState gear);
 void GameState_UpdateStartTime(time_t time);
 void GameState_UpdatePauseTime(time_t time);
 void GameState_UpdateTempTime(time_t time);
+
+// CarInput 배열 접근용 (나중에 서버/멀티플레이에서 사용)
+CarInput* GameState_GetCarInputs();       // 전체 배열 포인터
+const CarInput& GameState_GetCarInput(int idx); // 특정 차량 입력 참조
 
 
 #endif
