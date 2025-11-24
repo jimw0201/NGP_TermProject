@@ -16,4 +16,10 @@ bool checkCollisionWalls(const std::vector<std::pair<float, float>>& carCorners,
 // 4. 장애물 충돌 검사
 bool checkCollisionObstacle(const std::vector<std::pair<float, float>>& carCorners);
 
+// 5. 차 vs 차 충돌 검사
+bool checkCollisionCars(
+    const std::vector<std::pair<float, float>>& carCornersA,
+    const std::vector<std::pair<float, float>>& carCornersB);
+
+
 #endif

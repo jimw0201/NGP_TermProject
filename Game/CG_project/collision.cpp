@@ -116,3 +116,53 @@ bool checkCollisionObstacle(const std::vector<std::pair<float, float>>& carCorne
 
 	return false;
 }
+
+bool checkCollisionCars(
+	const std::vector<std::pair<float, float>>& carCornersA,
+	const std::vector<std::pair<float, float>>& carCornersB)
+{
+	int sizeA = static_cast<int>(carCornersA.size());
+	int sizeB = static_cast<int>(carCornersB.size());
+
+	// 1) A의 꼭짓점이 B 안에 들어가 있는지 검사
+	for (const auto& corner : carCornersA)
+	{
+		if (isPointInsidePolygon(carCornersB, corner.first, corner.second))
+		{
+			return true;
+		}
+	}
+
+	// 2) B의 꼭짓점이 A 안에 들어가 있는지 검사
+	for (const auto& corner : carCornersB)
+	{
+		if (isPointInsidePolygon(carCornersA, corner.first, corner.second))
+		{
+			return true;
+		}
+	}
+
+	// 3) A의 변과 B의 변이 교차하는지 검사
+	for (int i = 0; i < sizeA; ++i)
+	{
+		float ax1 = carCornersA[i].first;
+		float az1 = carCornersA[i].second;
+		float ax2 = carCornersA[(i + 1) % sizeA].first;
+		float az2 = carCornersA[(i + 1) % sizeA].second;
+
+		for (int j = 0; j < sizeB; ++j)
+		{
+			float bx1 = carCornersB[j].first;
+			float bz1 = carCornersB[j].second;
+			float bx2 = carCornersB[(j + 1) % sizeB].first;
+			float bz2 = carCornersB[(j + 1) % sizeB].second;
+
+			if (doLinesIntersect(ax1, az1, ax2, az2, bx1, bz1, bx2, bz2))
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
+}

@@ -123,13 +123,15 @@ void GameState_TimerLoop(int value)
         float newAngle =
             Car_GetRotationY(i) + Car_GetFrontWheelRotationY() * n * Car_GetSpeed(i);
 
+        // i번 차의 "미래 위치" 꼭짓점
         auto futureCarCorners = Car_GetRotatedCorners(new_dx, new_dz, newAngle);
 
         bool isColliding = false;
+
         if (!GameState_IsInvincible())
         {
-            // 벽과의 충돌 여부 확인
-            for (int w = 0; w < 4; ++w)
+            // 1) 벽과의 충돌 검사
+            for (int w = 0; w < 4 && !isColliding; ++w)
             {
                 float wallX = (w % 2 == 0) ? 0.0f : (w == 1 ? GROUND_SIZE : -GROUND_SIZE);
                 float wallZ = (w % 2 == 1) ? 0.0f : (w == 2 ? GROUND_SIZE : -GROUND_SIZE);
@@ -139,13 +141,35 @@ void GameState_TimerLoop(int value)
                 if (checkCollisionWalls(futureCarCorners, wallX, wallZ, wallWidth, wallHeight))
                 {
                     isColliding = true;
-                    break;
                 }
             }
 
+            // 2) 장애물과의 충돌 검사
             if (!isColliding && checkCollisionObstacle(futureCarCorners))
             {
                 isColliding = true;
+            }
+
+            // 3) 다른 차들과의 충돌 검사
+            if (!isColliding)
+            {
+                for (int j = 0; j < Car_Count(); ++j)
+                {
+                    if (j == i) continue;
+
+                    // j번 차의 "현재 위치" 꼭짓점
+                    auto otherCarCorners = Car_GetRotatedCorners(j);
+
+                    if (checkCollisionCars(futureCarCorners, otherCarCorners))
+                    {
+                        isColliding = true;
+
+                        // 둘 다 멈추게 하고 싶으면 j번 차 속도도 0으로
+                        Car_SetSpeed(j, 0.0f);
+
+                        break;
+                    }
+                }
             }
         }
 
@@ -160,7 +184,6 @@ void GameState_TimerLoop(int value)
         }
         else
         {
-            // 0번 차가 부딪혔을 때만 게임 로직상 crushed 처리
             if (i == 0)
             {
                 GameState_SetCrushed(true);
@@ -168,6 +191,7 @@ void GameState_TimerLoop(int value)
             Car_SetSpeed(i, 0.0f);
         }
     }
+
 
     // 핸들 복원은 한 번만
     Input_UpdateHandleReturn();
