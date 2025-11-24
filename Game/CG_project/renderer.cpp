@@ -1,4 +1,3 @@
-// [ renderer.cpp ]
 #include "renderer.h"
 
 // 다른 모듈의 정보를 가져와서 그려야 하므로 모두 포함
@@ -214,67 +213,71 @@ static void draw_pointMode(int modelLoc, int num)
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
-static void draw_wheels(int modelLoc, int num)
+static void draw_wheels(int modelLoc, int num, int carIndex)
 {
 	int objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glUniform3f(objColorLocation, 0.25f, 0.25f, 0.25f);
 
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_on_000(num, 0)));
-	GLUquadricObj* qobj1;
-	qobj1 = gluNewQuadric();
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_on_000(num, 0, carIndex)));
+	GLUquadricObj* qobj1 = gluNewQuadric();
 	gluCylinder(qobj1, WHEEL_SIZE, WHEEL_SIZE, WHEEL_SIZE / 2, 20, 8);
 	gluDeleteQuadric(qobj1);
 
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_on_000(num, 1)));
-	GLUquadricObj* qobj2;
-	qobj2 = gluNewQuadric();
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_on_000(num, 1, carIndex)));
+	GLUquadricObj* qobj2 = gluNewQuadric();
 	gluDisk(qobj2, 0.0f, WHEEL_SIZE, 20, 8);
 	gluDeleteQuadric(qobj2);
 
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_on_000(num, 2)));
-	GLUquadricObj* qobj3;
-	qobj3 = gluNewQuadric();
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_on_000(num, 2, carIndex)));
+	GLUquadricObj* qobj3 = gluNewQuadric();
 	gluDisk(qobj3, 0.0f, WHEEL_SIZE, 20, 8);
 	gluDeleteQuadric(qobj3);
 }
 
-static void drawCar(int modelLoc, int mod)
+static void drawCar(int modelLoc, int carIndex)
 {
 	int objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
+
+	// 차체
 	glUniform3f(objColorLocation, 0.0f, 0.0f, 0.9f);
 	glBindVertexArray(vao[1]);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Car_Body()));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Car_Body(carIndex)));
 	glDrawArrays(GL_TRIANGLES, 0, 6 * 6);
 
+	// 유리 부분
 	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glUniform3f(objColorLocation, 0.0f, 0.9f, 0.9f);
 	glDrawArrays(GL_TRIANGLES, 36, 6 * 6);
 
+	// 헤드라이트 메쉬
 	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glUniform3f(objColorLocation, 1.0f, 1.0f, 0.8f);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Headlights(0)));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Headlights(0, carIndex)));
 	glDrawArrays(GL_TRIANGLES, 72, 6 * 6);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Headlights(1)));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Headlights(1, carIndex)));
 	glDrawArrays(GL_TRIANGLES, 108, 6 * 6);
 
-	draw_wheels(modelLoc, 1);
-	draw_wheels(modelLoc, 2);
-	draw_wheels(modelLoc, 3);
-	draw_wheels(modelLoc, 4);
+	// 바퀴(원통)
+	draw_wheels(modelLoc, 1, carIndex);
+	draw_wheels(modelLoc, 2, carIndex);
+	draw_wheels(modelLoc, 3, carIndex);
+	draw_wheels(modelLoc, 4, carIndex);
 
+	// 바퀴 박스
 	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glUniform3f(objColorLocation, 0.5f, 0.5f, 0.5f);
 
 	glBindVertexArray(vao[4]);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_rects(1)));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_rects(1, carIndex)));
 	glDrawArrays(GL_TRIANGLES, 0, 6 * 6);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_rects(2)));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_rects(2, carIndex)));
 	glDrawArrays(GL_TRIANGLES, 36, 6 * 6);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_rects(3)));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_rects(3, carIndex)));
 	glDrawArrays(GL_TRIANGLES, 72, 6 * 6);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_rects(4)));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_rects(4, carIndex)));
 	glDrawArrays(GL_TRIANGLES, 108, 6 * 6);
 }
+
 
 static void drawWalls(int modelLoc)
 {
@@ -379,21 +382,25 @@ static void drawCarCorners(int modelLoc)
 	int objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glUniform3f(objColorLocation, 1.0f, 0.0f, 0.0f);
 
-	auto carCorners = Car_GetRotatedCorners();
-	for (const auto& corner : carCorners)
+	for (int i = 0; i < Car_Count(); ++i)
 	{
-		float cornerX = corner.first;
-		float cornerZ = corner.second;
+		auto carCorners = Car_GetRotatedCorners(i);
+		for (const auto& corner : carCorners)
+		{
+			float cornerX = corner.first;
+			float cornerZ = corner.second;
 
-		glm::mat4 T = glm::mat4(1.0f);
-		T = glm::translate(T, glm::vec3(cornerX, CAR_SIZE * 0.75, cornerZ));
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(T));
-		GLUquadricObj* qobj1;
-		qobj1 = gluNewQuadric();
-		gluSphere(qobj1, WHEEL_SIZE / 3, 10, 10);
-		gluDeleteQuadric(qobj1);
+			glm::mat4 T = glm::mat4(1.0f);
+			T = glm::translate(T, glm::vec3(cornerX, CAR_SIZE * 0.75, cornerZ));
+			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(T));
+
+			GLUquadricObj* qobj1 = gluNewQuadric();
+			gluSphere(qobj1, WHEEL_SIZE / 3, 10, 10);
+			gluDeleteQuadric(qobj1);
+		}
 	}
 }
+
 
 // 메인 그리기 함수
 void drawScene()
@@ -469,7 +476,10 @@ void drawScene()
 		drawGround(modelLoc);
 
 		// 모델 그리기
-		drawCar(modelLoc, 0);
+		for (int i = 0; i < Car_Count(); ++i)
+		{
+			drawCar(modelLoc, i);
+		}
 
 		// 장애물 차 그리기
 		drawObstacleCars(modelLoc);
@@ -512,7 +522,10 @@ void drawScene()
 
 		// 자동차, 바닥, 벽 등 모든 객체를 다시 그리기
 		drawGround(modelLoc);
-		drawCar(modelLoc, 0);
+		for (int i = 0; i < Car_Count(); ++i)
+		{
+			drawCar(modelLoc, i);
+		}
 		drawObstacleCars(modelLoc);
 		drawWalls(modelLoc);
 		drawFinishRect(modelLoc);
