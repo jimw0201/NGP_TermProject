@@ -18,69 +18,70 @@ static const float acceleration = 0.001f;
 static const float deceleration = 0.005f;
 static const float friction = 0.0001f;
 
-void Car_UpdateSpeed(GearState currentGear, int carIndex)
+void Car_UpdateSpeed(const CarInput& input, int carIndex)
 {
 	float& speed = car_speed[carIndex];
+	GearState currentGear = input.gear;
 
+	// PARK / NEUTRAL 은 가속 불가
 	if (currentGear == PARK || currentGear == NEUTRAL)
 	{
-		speed = 0.0f; // 정지
+		speed = 0.0f;
+		return;
 	}
 
-	// 후진 처리
-	if (currentGear == REVERSE && isAcceleratingBackward)
+	// 후진
+	if (currentGear == REVERSE && input.accelBackward)
 	{
 		speed -= acceleration;
 		if (speed < -MAX_SPEED)
 			speed = -MAX_SPEED;
 	}
 
-	// 전진 처리
-	if (currentGear == DRIVE && isAcceleratingForward)
+	// 전진
+	if (currentGear == DRIVE && input.accelForward)
 	{
 		speed += acceleration;
 		if (speed > MAX_SPEED)
 			speed = MAX_SPEED;
 	}
 
-	if (isBraking)
+	// 브레이크
+	if (input.brake)
 	{
 		if (speed > 0.0f)
 		{
 			speed -= deceleration;
-			if (speed < 0.0f)
-				speed = 0.0f;
+			if (speed < 0.0f) speed = 0.0f;
 		}
 		else if (speed < 0.0f)
 		{
 			speed += deceleration;
-			if (speed > 0.0f)
-				speed = 0.0f;
+			if (speed > 0.0f) speed = 0.0f;
 		}
 	}
 
-	if (!isAcceleratingForward && !isAcceleratingBackward && !isBraking)
+	// 자연 감속
+	if (!input.accelForward && !input.accelBackward && !input.brake)
 	{
-		// 자연 감속
 		if (speed > 0.0f)
 		{
 			speed -= friction;
-			if (speed < 0.0f)
-				speed = 0.0f;
+			if (speed < 0.0f) speed = 0.0f;
 		}
 		else if (speed < 0.0f)
 		{
 			speed += friction;
-			if (speed > 0.0f)
-				speed = 0.0f;
+			if (speed > 0.0f) speed = 0.0f;
 		}
 	}
 }
 
-void Car_UpdateSpeed(GearState currentGear)
+void Car_UpdateSpeed(const CarInput& input)
 {
-	Car_UpdateSpeed(currentGear, 0);
+	Car_UpdateSpeed(input, 0);
 }
+
 
 void Car_Init()
 {

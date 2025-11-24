@@ -65,7 +65,7 @@ std::vector<std::pair<float, float>> Car_GetRotatedCorners();
 
 int Car_Count();
 
-void Car_UpdateSpeed(GearState currentGear, int carIndex);
-void Car_UpdateSpeed(GearState currentGear);
+void Car_UpdateSpeed(const CarInput& input, int carIndex);
+void Car_UpdateSpeed(const CarInput& input);
 
 #endif

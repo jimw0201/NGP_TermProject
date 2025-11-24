@@ -128,7 +128,8 @@ void GameState_TimerLoop(int value)
     // 2) 모든 차량 속도 업데이트 (입력은 공유)
     for (int i = 0; i < Car_Count(); ++i)
     {
-        Car_UpdateSpeed(gear, i);
+        const CarInput& input = GameState_GetCarInput(i);
+        Car_UpdateSpeed(input, i);
     }
 
     // 3) 주차 상태는 0번 차 기준으로만 체크 (카메라도 0번 기준이니까)
@@ -147,8 +148,13 @@ void GameState_TimerLoop(int value)
         float new_dz = Car_GetDZ(i) + Car_GetSpeed(i) * cos(radians);
 
         const float n = 2.0f;
+
+        const CarInput& input = GameState_GetCarInput(i);
+        float steering = input.steering;
+
         float newAngle =
-            Car_GetRotationY(i) + Car_GetFrontWheelRotationY() * n * Car_GetSpeed(i);
+            Car_GetRotationY(i) + steering * n * Car_GetSpeed(i);
+
 
         // i번 차의 "미래 위치" 꼭짓점
         auto futureCarCorners = Car_GetRotatedCorners(new_dx, new_dz, newAngle);
