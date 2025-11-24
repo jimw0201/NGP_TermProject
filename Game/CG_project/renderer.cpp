@@ -417,7 +417,6 @@ void drawScene()
 	int projLoc = glGetUniformLocation(shaderProgramID, "projectionTransform");
 
 	// 3인칭 뷰
-	if (GameState_GetCurrentGear() != REVERSE)
 	{
 		if (true)
 		{
@@ -500,15 +499,10 @@ void drawScene()
 	if (GameState_GetCurrentGear() == REVERSE)
 	{
 		// 후방 카메라 뷰포트 설정
-		//int rearViewWidth = clientWidth / 3;
-		//int rearViewHeight = clientHeight / 3;
-		//int rearViewX = (clientWidth - rearViewWidth) / 2; // 화면 중앙 상단
-		//int rearViewY = clientHeight - rearViewHeight;
-
-		int rearViewWidth = width;
-		int rearViewHeight = height;
-		int rearViewX = 0;// 화면 중앙 상단
-		int rearViewY = 0;
+		int rearViewWidth = width / 3;
+		int rearViewHeight = height / 4;
+		int rearViewX = (width - rearViewWidth) / 2; // 화면 중앙 상단
+		int rearViewY = height - rearViewHeight - 10;
 
 		glViewport(rearViewX, rearViewY, rearViewWidth, rearViewHeight);
 
