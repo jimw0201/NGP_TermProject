@@ -11,6 +11,22 @@
 // 차량 수
 static const int kCarCount = 4;
 
+// 각 차량의 상태(위치, 회전, 속도 등)를 하나로 묶은 구조체
+struct CarState
+{
+    float dx;
+    float dy;
+    float dz;
+    float rotY;
+    float wheelRotX;
+    float speed;
+};
+
+// 차량 상태 통째로 접근 (멀티 대비용)
+const CarState& Car_GetState(int carIndex);
+void Car_SetState(int carIndex, const CarState& state);
+
+
 void Car_Init();
 
 glm::mat4 Car_Body(int carIndex);

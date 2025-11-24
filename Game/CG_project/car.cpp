@@ -1,11 +1,8 @@
 #include "car.h"
 #include "mesh.h"
 
-// 각 차의 상태
-static float car_dx[kCarCount], car_dy[kCarCount], car_dz[kCarCount];
-static float car_rotateY[kCarCount];
-static float wheel_rect_rotateX[kCarCount];
-static float car_speed[kCarCount];
+// 차량 상태(위치, 회전, 속도 등)
+static CarState g_cars[kCarCount];
 
 // 입력 상태: 일단 4대가 같이 쓰게 함
 static float front_wheels_rotateY;
@@ -20,7 +17,7 @@ static const float friction = 0.0001f;
 
 void Car_UpdateSpeed(const CarInput& input, int carIndex)
 {
-	float& speed = car_speed[carIndex];
+	float& speed = g_cars[carIndex].speed;
 	GearState currentGear = input.gear;
 
 	// PARK / NEUTRAL 은 가속 불가
@@ -87,15 +84,15 @@ void Car_Init()
 {
 	// 일단 차 4대를 X축으로 옆에 나란히 놓고 테스트
 	float startX[kCarCount] = { -4.5f, -1.5f, 1.5f, 4.5f };
+
 	for (int i = 0; i < kCarCount; ++i)
 	{
-		car_dx[i] = startX[i];
-		car_dy[i] = WHEEL_SIZE;
-		car_dz[i] = -3.0f;
-		car_rotateY[i] = 0.0f;
-
-		wheel_rect_rotateX[i] = 0.0f;
-		car_speed[i] = 0.0f;
+		g_cars[i].dx = startX[i];
+		g_cars[i].dy = WHEEL_SIZE;
+		g_cars[i].dz = -3.0f;
+		g_cars[i].rotY = 0.0f;
+		g_cars[i].wheelRotX = 0.0f;
+		g_cars[i].speed = 0.0f;
 	}
 
 	front_wheels_rotateY = 0.0f;
@@ -110,8 +107,9 @@ glm::mat4 Car_Body(int carIndex)
     glm::mat4 T = glm::mat4(1.0f);
     glm::mat4 Ry = glm::mat4(1.0f);
 
-    Ry = glm::rotate(Ry, glm::radians(car_rotateY[carIndex]), glm::vec3(0.0, 1.0, 0.0));
-    T = glm::translate(T, glm::vec3(car_dx[carIndex], car_dy[carIndex], car_dz[carIndex]));
+	Ry = glm::rotate(Ry, glm::radians(g_cars[carIndex].rotY), glm::vec3(0.0, 1.0, 0.0));
+	T = glm::translate(T,
+		glm::vec3(g_cars[carIndex].dx, g_cars[carIndex].dy, g_cars[carIndex].dz));
 
     return T * Ry;
 }
@@ -205,7 +203,7 @@ glm::mat4 Wheel_rects(int num, int carIndex)
 	}
 
 	glm::mat4 Rx = glm::mat4(1.0f);
-	Rx = glm::rotate(Rx, glm::radians(wheel_rect_rotateX[carIndex]), glm::vec3(1.0, 0.0, 0.0));
+	Rx = glm::rotate(Rx, glm::radians(g_cars[carIndex].wheelRotX), glm::vec3(1.0, 0.0, 0.0));
 
 	return Car_Body(carIndex) * T2 * Ry * Rx * T;
 }
@@ -279,7 +277,11 @@ std::vector<std::pair<float, float>> Car_GetRotatedCorners(float x, float z, flo
 
 std::vector<std::pair<float, float>> Car_GetRotatedCorners(int carIndex)
 {
-	return Car_GetRotatedCorners(car_dx[carIndex], car_dz[carIndex], car_rotateY[carIndex]);
+	return Car_GetRotatedCorners(
+		g_cars[carIndex].dx,
+		g_cars[carIndex].dz,
+		g_cars[carIndex].rotY
+	);
 }
 
 std::vector<std::pair<float, float>> Car_GetRotatedCorners()
@@ -287,12 +289,12 @@ std::vector<std::pair<float, float>> Car_GetRotatedCorners()
 	return Car_GetRotatedCorners(0);
 }
 
-float Car_GetDX(int carIndex) { return car_dx[carIndex]; }
-float Car_GetDY(int carIndex) { return car_dy[carIndex]; }
-float Car_GetDZ(int carIndex) { return car_dz[carIndex]; }
-float Car_GetRotationY(int carIndex) { return car_rotateY[carIndex]; }
-float Car_GetWheelRotationX(int carIndex) { return wheel_rect_rotateX[carIndex]; }
-float Car_GetSpeed(int carIndex) { return car_speed[carIndex]; }
+float Car_GetDX(int carIndex) { return g_cars[carIndex].dx; }
+float Car_GetDY(int carIndex) { return g_cars[carIndex].dy; }
+float Car_GetDZ(int carIndex) { return g_cars[carIndex].dz; }
+float Car_GetRotationY(int carIndex) { return g_cars[carIndex].rotY; }
+float Car_GetWheelRotationX(int carIndex) { return g_cars[carIndex].wheelRotX; }
+float Car_GetSpeed(int carIndex) { return g_cars[carIndex].speed; }
 
 float Car_GetDX() { return Car_GetDX(0); }
 float Car_GetDY() { return Car_GetDY(0); }
@@ -306,15 +308,25 @@ bool  Car_IsAcceleratingForward() { return isAcceleratingForward; }
 bool  Car_IsAcceleratingBackward() { return isAcceleratingBackward; }
 bool  Car_IsBraking() { return isBraking; }
 
-void Car_SetPosition(int carIndex, float dx, float dz)
+const CarState& Car_GetState(int carIndex)
 {
-	car_dx[carIndex] = dx;
-	car_dz[carIndex] = dz;
+	return g_cars[carIndex];
 }
 
-void Car_SetRotationY(int carIndex, float angle) { car_rotateY[carIndex] = angle; }
-void Car_SetWheelRotationX(int carIndex, float angle) { wheel_rect_rotateX[carIndex] = angle; }
-void Car_SetSpeed(int carIndex, float speed) { car_speed[carIndex] = speed; }
+void Car_SetState(int carIndex, const CarState& state)
+{
+	g_cars[carIndex] = state;
+}
+
+void Car_SetPosition(int carIndex, float dx, float dz)
+{
+	g_cars[carIndex].dx = dx;
+	g_cars[carIndex].dz = dz;
+}
+
+void Car_SetRotationY(int carIndex, float angle) { g_cars[carIndex].rotY = angle; }
+void Car_SetWheelRotationX(int carIndex, float angle) { g_cars[carIndex].wheelRotX = angle; }
+void Car_SetSpeed(int carIndex, float speed) { g_cars[carIndex].speed = speed; }
 
 void Car_SetPosition(float dx, float dz) { Car_SetPosition(0, dx, dz); }
 void Car_SetRotationY(float angle) { Car_SetRotationY(0, angle); }
