@@ -1,15 +1,23 @@
 #ifndef CAR_H
 #define CAR_H
 
-#include <glm/glm.hpp>
-#include <glm/ext.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <gl/glm/glm.hpp>
+#include <gl/glm/ext.hpp>
+#include <gl/glm/gtc/matrix_transform.hpp>
 #include <vector>
 
 #include "game_state.h"
 
 // 차량 수
 static const int kCarCount = 4;
+
+enum PlayerId
+{
+    PLAYER_1 = 0,
+    PLAYER_2 = 1,
+    PLAYER_3 = 2,
+    PLAYER_4 = 3
+};
 
 // 각 차량의 상태(위치, 회전, 속도 등)를 하나로 묶은 구조체
 struct CarState

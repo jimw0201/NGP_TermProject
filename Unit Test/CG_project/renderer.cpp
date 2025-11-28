@@ -10,9 +10,9 @@
 
 #include <iostream>
 #include <string>
-#include <glm/glm.hpp>
-#include <glm/ext.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <gl/glm/glm.hpp>
+#include <gl/glm/ext.hpp>
+#include <gl/glm/gtc/matrix_transform.hpp>
 
 static int width = 900;
 static int height = 600;
@@ -31,6 +31,14 @@ static GLfloat lightX = 0.0f;
 static GLfloat lightY = 5.0f;
 static GLfloat lightZ = 1.0f;
 static float light = 0.8f;
+
+// 플레이어별 차 몸체 색 (1P~4P)
+static const glm::vec3 g_playerBodyColors[kCarCount] = {
+	glm::vec3(1.0f, 0.0f, 0.0f),	// 1P: 빨강
+	glm::vec3(1.0f, 0.0f, 1.0f),	// 2P: 핑크
+	glm::vec3(0.55f, 0.27f, 0.07f), // 3P: 갈색
+	glm::vec3(0.0f, 0.0f, 1.0f)		// 4P: 파랑
+};
 
 // 텍스트 렌더링
 static void RenderBitmapString(float x, float y, void* font, const char* string)
@@ -239,7 +247,9 @@ static void drawCar(int modelLoc, int carIndex)
 	int objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 
 	// 차체
-	glUniform3f(objColorLocation, 0.0f, 0.0f, 0.9f);
+	glm::vec3 bodyColor = g_playerBodyColors[carIndex];
+	glUniform3f(objColorLocation, bodyColor.r, bodyColor.g, bodyColor.b);
+
 	glBindVertexArray(vao[1]);
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Car_Body(carIndex)));
 	glDrawArrays(GL_TRIANGLES, 0, 6 * 6);

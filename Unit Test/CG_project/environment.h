@@ -1,8 +1,8 @@
 #ifndef ENVIRONMENT_H
 #define ENVIRONMENT_H
 
-#include <glm/glm.hpp>
-#include <glm/ext.hpp>
+#include <gl/glm/glm.hpp>
+#include <gl/glm/ext.hpp>
 #include <vector>
 
 // 장애물: [주차장 인덱스 0~3][해당 주차장의 장애물 슬롯 0~4][x/z]

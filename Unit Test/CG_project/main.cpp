@@ -9,9 +9,9 @@
 #include <gl/freeglut.h>
 #include <gl/freeglut_ext.h>
 
-#include <glm/glm.hpp>
-#include <glm/ext.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <gl/glm/glm.hpp>
+#include <gl/glm/ext.hpp>
+#include <gl/glm/gtc/matrix_transform.hpp>
 
 #include "game_state.h"
 #include "mesh.h"
