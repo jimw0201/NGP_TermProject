@@ -1,12 +1,5 @@
 #include "GameLogic.h"
 
-#define MAX_SPEED 0.01f
-#define ACCELERATION 0.001f
-#define DECELERATION 0.002f
-#define FRICTION 0.001f
-#define HANDLE_MAX_ROTATION 900.0f
-#define WHEEL_MAX_ROTATION 30.0f
-#define WHEEL_SPIN_MULTIPLIER 200.0f
 
 void Server_HandleNC(SOCKET newTCP_Socket, int PlayerID) {
     printf("[TCP] Server_HandleNC: 클라이언트 %d 접속 처리 시작\n", PlayerID);
@@ -151,8 +144,159 @@ void Server_movement(int PlayerID) {
     }
 }
 
-void Server_CheckAllCollisions() {
+std::vector<std::pair<float, float>> getRotatedCarCorners(float x, float z, float angle)
+{
+    float halfWidth = CAR_SIZE / 2;
+    float halfHeight = CAR_SIZE;
 
+    // 차량 꼭짓점
+    std::vector<std::pair<float, float>> corners = {
+        {-halfWidth, -halfHeight},
+        {halfWidth, -halfHeight},
+        {-halfWidth, halfHeight},
+        {halfWidth, halfHeight}
+    };
+
+    // 회전
+    float rad_neg = (float)(-angle * (M_PI / 180.0));
+
+    std::vector<std::pair<float, float>> rotatedCorners;
+    for (const auto& corner : corners) {
+        // 회전 행렬 공식
+        float rotatedX = corner.first * cos(rad_neg) - corner.second * sin(rad_neg);
+        float rotatedZ = corner.first * sin(rad_neg) + corner.second * cos(rad_neg);
+        
+        // 월드 좌표로 변환
+        rotatedCorners.emplace_back(x + rotatedX, z + rotatedZ);
+    }
+
+    return rotatedCorners;
+}
+
+static bool isPointInsidePolygon(const std::vector<std::pair<float, float>>& polygon, float x, float z)
+{
+    int intersections = 0;
+    int n = (int)polygon.size();
+    
+    for (int i = 0; i < n; ++i) {
+        
+        auto p1 = polygon[i];
+        auto p2 = polygon[(i + 1) % n];
+        
+        // 반직선 교차 판정
+        if ((p1.second > z) != (p2.second > z)) {
+            float intersectionX = p1.first + (z - p1.second) * (p2.first - p1.first) / (p2.second - p1.second);
+            if (intersectionX > x) intersections++;
+        }
+    }
+
+    // 홀수면 내부
+    return intersections % 2 == 1;
+}
+
+static bool doLinesIntersect(float x1, float z1, float x2, float z2, float x3, float z3, float x4, float z4)
+{
+    auto cross = [](float ax, float ay, float bx, float by) { return ax * by - ay * bx; };
+
+    float d1 = cross(x3 - x1, z3 - z1, x4 - x1, z4 - z1);
+    float d2 = cross(x3 - x2, z3 - z2, x4 - x2, z4 - z2);
+    float d3 = cross(x1 - x3, z1 - z3, x2 - x3, z2 - z3);
+    float d4 = cross(x1 - x4, z1 - z4, x2 - x4, z2 - z4);
+
+    // 두 선분 교차 판정
+    return (d1 * d2 < 0 && d3 * d4 < 0);
+}
+
+static bool checkCollisionWalls(const std::vector<std::pair<float, float>>& carCorners)
+{
+    // 맵의 경계 계산
+    float wallMin = -GROUND_SIZE + WALL_THICKNESS;
+    float wallMax = GROUND_SIZE - WALL_THICKNESS;
+
+    // 꼭짓점 중 하나라도 맵 밖으로 나가면 충돌
+    for (const auto& corner : carCorners) {
+        if (corner.first < wallMin || corner.first > wallMax ||
+            corner.second < wallMin || corner.second > wallMax) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool checkCollisionCars (const std::vector<std::pair<float, float>>& carCornersA, 
+    const std::vector<std::pair<float, float>>& carCornersB)
+{
+    // 1) A의 꼭짓점이 B 안에?
+    for (const auto& corner : carCornersA) {
+        if (isPointInsidePolygon(carCornersB, corner.first, corner.second)) return true;
+    }
+    
+    // 2) B의 꼭짓점이 A 안에?
+    for (const auto& corner : carCornersB) {
+        if (isPointInsidePolygon(carCornersA, corner.first, corner.second)) return true;
+    }
+    
+    // 3) 변끼리 교차?
+    int sizeA = (int)carCornersA.size();
+    int sizeB = (int)carCornersB.size();
+    
+    for (int i = 0; i < sizeA; ++i) {
+        for (int j = 0; j < sizeB; ++j) {
+            if (doLinesIntersect(
+                carCornersA[i].first, carCornersA[i].second,
+                carCornersA[(i + 1) % sizeA].first, carCornersA[(i + 1) % sizeA].second,
+                carCornersB[j].first, carCornersB[j].second,
+                carCornersB[(j + 1) % sizeB].first, carCornersB[(j + 1) % sizeB].second)) {
+                
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+void Server_CheckAllCollisions() {
+    // 모든 접속한 플레이어에 대해 충돌 검사
+    for (int i = 0; i < MAX_PLAYERS; i++) {
+        if (!g_clients[i].IsConnected) continue;
+
+        PlayerData& player = g_clients[i].playerData;
+        PlayerGameStats& stats = g_clients[i].playerStats;
+
+        // 1. 현재 위치 기반으로 4개 꼭짓점 계산
+        auto currentCorners = getRotatedCarCorners(player.car_dx, player.car_dz, player.car_rotateY);
+
+        bool isColliding = false;
+
+        // 2. 벽 충돌 검사
+        if (checkCollisionWalls(currentCorners)) {
+            isColliding = true;
+        }
+
+        // 장애물 충돌은 맵 데이터가 없으므로 제외함
+
+        // 3. 다른 플레이어와의 충돌 검사
+        if (!isColliding) {
+            for (int j = 0; j < MAX_PLAYERS; j++) {
+                // 나 자신이나 접속 안 한 플레이어는 패스
+                if (i == j || !g_clients[j].IsConnected) continue;
+
+                // 상대방 꼭짓점 계산
+                auto otherCorners = getRotatedCarCorners(g_clients[j].playerData.car_dx,
+                    g_clients[j].playerData.car_dz,
+                    g_clients[j].playerData.car_rotateY);
+
+                // 충돌 검사
+                if (checkCollisionCars(currentCorners, otherCorners)) {
+                    isColliding = true;
+                    // 상대방도 멈추게 처리
+                    g_clients[j].playerData.car_speed = 0.0f;
+                    break;
+                }
+            }
+        }
+    }
 }
 
 bool Server_CheckGameOver() {
