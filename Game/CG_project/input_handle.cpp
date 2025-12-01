@@ -1,6 +1,7 @@
 #include "input_handle.h"
 #include "game_state.h"
 #include "car.h"
+#include "network_client.h"
 #include <iostream>
 #include <cmath>
 #include <algorithm> 
@@ -23,6 +24,18 @@ static float c_dx = 0.0f;
 static float c_dy = 1.0f;
 static float c_dz = -3.0f;
 static float c_rotateY = 0.0f;
+
+static bool g_keyW = false;
+static bool g_keySpace = false;
+static bool g_keyQ = false;
+static bool g_keyE = false;
+static bool g_keyP = false;
+
+bool Input_IsKeyWDown() { return g_keyW; }
+bool Input_IsKeySpaceDown() { return g_keySpace; }
+bool Input_IsKeyQDown() { return g_keyQ; }
+bool Input_IsKeyEDown() { return g_keyE; }
+
 
 void Input_Init()
 {
@@ -67,7 +80,10 @@ void Input_UpdateHandleReturn()
         cumulativeAngle = handle_rotateZ;
 
         // 바퀴 회전 동기화
-        Car_SetFrontWheelRotationY((handle_rotateZ / 900.0f) * 30.0f);
+        if (!Network_IsConnected())
+        {
+            Car_SetFrontWheelRotationY((handle_rotateZ / 900.0f) * 30.0f);
+        }
     }
 }
 
@@ -115,6 +131,7 @@ void Keyboard(unsigned char key, int x, int y)
         switch (key)
         {
         case 'q':
+            g_keyQ = true;
             if (GameState_GetCurrentGear() > PARK)
                 GameState_SetCurrentGear(static_cast<GearState>(GameState_GetCurrentGear() - 1));
             if (GameState_GetCurrentGear() == PARK && GameState_IsParked())
@@ -124,14 +141,17 @@ void Keyboard(unsigned char key, int x, int y)
             }
             break;
         case 'e':
+            g_keyE = true;
             if (GameState_GetCurrentGear() < DRIVE)
                 GameState_SetCurrentGear(static_cast<GearState>(GameState_GetCurrentGear() + 1));
             break;
         case 'w':
+            g_keyW = true;
             if (GameState_GetCurrentGear() == DRIVE) Car_SetAcceleratingForward(true);
             else if (GameState_GetCurrentGear() == REVERSE) Car_SetAcceleratingBackward(true);
             break;
         case ' ':
+            g_keySpace = true;
             Car_SetBraking(true);
             break;
         }
@@ -144,11 +164,19 @@ void KeyboardUp(unsigned char key, int x, int y)
     switch (key)
     {
     case 'w':
+        g_keyW = false;
         Car_SetAcceleratingForward(false);
         Car_SetAcceleratingBackward(false);
         break;
     case ' ':
+        g_keySpace = false;
         Car_SetBraking(false);
+        break;
+    case 'q':
+        g_keyQ = false;
+        break;
+    case 'e':
+        g_keyE = false;
         break;
     }
     glutPostRedisplay();
@@ -206,7 +234,10 @@ void MouseMotion(int x, int y)
         }
         lastAngle = currentAngle;
 
-        Car_SetFrontWheelRotationY((handle_rotateZ / 900.0f) * 30.0f);
+        if (!Network_IsConnected())
+        {
+            Car_SetFrontWheelRotationY((handle_rotateZ / 900.0f) * 30.0f);
+        }
     }
     if (is_mouse_on_camera)
     {

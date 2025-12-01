@@ -21,4 +21,11 @@ void KeyboardUp(unsigned char key, int x, int y);
 void MouseButton(int button, int state, int x, int y);
 void MouseMotion(int x, int y);
 
+
+bool Input_IsKeyWDown();
+bool Input_IsKeySpaceDown();
+bool Input_IsKeyQDown();
+bool Input_IsKeyEDown();
+
+
 #endif
