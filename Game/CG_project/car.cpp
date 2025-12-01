@@ -3,9 +3,9 @@
 
 // 차량 상태(위치, 회전, 속도 등)
 static CarState g_cars[kCarCount];
+static float g_frontWheelRotY[kCarCount];
 
 // 입력 상태: 일단 4대가 같이 쓰게 함
-static float front_wheels_rotateY;
 static bool isAcceleratingForward;
 static bool isAcceleratingBackward;
 static bool isBraking;
@@ -92,9 +92,12 @@ void Car_InitForStage(int stage)
 {
 	for (int i = 0; i < kCarCount; ++i)
 	{
+		// 높이는 대부분 고정이니 공통으로
 		g_cars[i].dy = 0.125f;
 		g_cars[i].speed = 0.0f;
 		g_cars[i].wheelRotX = 0.0f;
+
+		g_frontWheelRotY[i] = 0.0f;
 	}
 
 	switch (stage)
@@ -128,7 +131,7 @@ void Car_InitForStage(int stage)
 		break;
 	}
 
-	front_wheels_rotateY = 0.0f;
+	//front_wheels_rotateY = 0.0f;
 	isAcceleratingForward = false;
 	isAcceleratingBackward = false;
 	isBraking = false;
@@ -138,19 +141,19 @@ void Car_InitForStage(int stage)
 // 차체의 변환 - 이를 기준으로 헤드라이트, 바퀴 등의 위치가 정해진다.
 glm::mat4 Car_Body(int carIndex)
 {
-	glm::mat4 T = glm::mat4(1.0f);
-	glm::mat4 Ry = glm::mat4(1.0f);
+    glm::mat4 T = glm::mat4(1.0f);
+    glm::mat4 Ry = glm::mat4(1.0f);
 
 	Ry = glm::rotate(Ry, glm::radians(g_cars[carIndex].rotY), glm::vec3(0.0, 1.0, 0.0));
 	T = glm::translate(T,
 		glm::vec3(g_cars[carIndex].dx, g_cars[carIndex].dy, g_cars[carIndex].dz));
 
-	return T * Ry;
+    return T * Ry;
 }
 
 glm::mat4 Car_Body()
 {
-	return Car_Body(0);
+    return Car_Body(0);
 }
 
 glm::mat4 Headlights(int left_right, int carIndex)
@@ -212,8 +215,8 @@ glm::mat4 Wheel_rects(int num, int carIndex)
 
 	if (num == 1 || num == 2)
 	{
-		//앞바퀴들에게 회전 변환 추가 적용
-		Ry = glm::rotate(Ry, glm::radians(front_wheels_rotateY), glm::vec3(0.0, 1.0, 0.0));
+		float steerY = Car_GetFrontWheelRotationY(carIndex);
+		Ry = glm::rotate(Ry, glm::radians(steerY), glm::vec3(0.0f, 1.0f, 0.0f));
 	}
 	if (num == 1) //앞 기준 왼쪽 앞
 	{
@@ -258,8 +261,8 @@ glm::mat4 Wheel_on_000(int num, int type, int carIndex) //num은 4개 바퀴의 번호,
 
 	if (num == 1 || num == 2)
 	{
-		//앞바퀴들에게 회전 변환 추가 적용
-		Ry2 = glm::rotate(Ry2, glm::radians(front_wheels_rotateY), glm::vec3(0.0, 1.0, 0.0));
+		float steerY = Car_GetFrontWheelRotationY(carIndex);
+		Ry2 = glm::rotate(Ry2, glm::radians(steerY), glm::vec3(0.0f, 1.0f, 0.0f));
 	}
 	if (type == 0)		//바퀴
 	{
@@ -337,7 +340,7 @@ float Car_GetRotationY() { return Car_GetRotationY(0); }
 float Car_GetWheelRotationX() { return Car_GetWheelRotationX(0); }
 float Car_GetSpeed() { return Car_GetSpeed(0); }
 
-float Car_GetFrontWheelRotationY() { return front_wheels_rotateY; }
+//float Car_GetFrontWheelRotationY() { return g_frontWheelRotY[0]; }
 bool  Car_IsAcceleratingForward() { return isAcceleratingForward; }
 bool  Car_IsAcceleratingBackward() { return isAcceleratingBackward; }
 bool  Car_IsBraking() { return isBraking; }
@@ -367,7 +370,7 @@ void Car_SetRotationY(float angle) { Car_SetRotationY(0, angle); }
 void Car_SetWheelRotationX(float angle) { Car_SetWheelRotationX(0, angle); }
 void Car_SetSpeed(float speed) { Car_SetSpeed(0, speed); }
 
-void Car_SetFrontWheelRotationY(float angle) { front_wheels_rotateY = angle; }
+void Car_SetFrontWheelRotationY(float angle) { g_frontWheelRotY[0] = angle; }
 void Car_SetAcceleratingForward(bool status) { isAcceleratingForward = status; }
 void Car_SetAcceleratingBackward(bool status) { isAcceleratingBackward = status; }
 void Car_SetBraking(bool status) { isBraking = status; }
@@ -375,4 +378,22 @@ void Car_SetBraking(bool status) { isBraking = status; }
 int Car_Count()
 {
 	return kCarCount;
+}
+
+// 차별 조향각 (멀티카용)
+void Car_SetFrontWheelRotationY(int carIndex, float angle)
+{
+	if (carIndex < 0 || carIndex >= kCarCount) return;
+	g_frontWheelRotY[carIndex] = angle;
+}
+
+float Car_GetFrontWheelRotationY(int carIndex)
+{
+	if (carIndex < 0 || carIndex >= kCarCount) return 0.0f;
+	return g_frontWheelRotY[carIndex];
+}
+
+float Car_GetFrontWheelRotationY()
+{
+	return Car_GetFrontWheelRotationY(0);
 }

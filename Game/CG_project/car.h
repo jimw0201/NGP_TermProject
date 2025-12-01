@@ -79,6 +79,9 @@ void Car_SetWheelRotationX(float angle);
 void Car_SetSpeed(float speed);
 
 void Car_SetFrontWheelRotationY(float angle);
+void Car_SetFrontWheelRotationY(int carIndex, float angle);
+float Car_GetFrontWheelRotationY(int carIndex); 
+
 void Car_SetAcceleratingForward(bool status);
 void Car_SetAcceleratingBackward(bool status);
 void Car_SetBraking(bool status);
