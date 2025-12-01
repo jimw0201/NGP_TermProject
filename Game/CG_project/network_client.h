@@ -10,7 +10,7 @@ bool Network_Init(const char* serverIp, unsigned short port);
 // 네트워크 종료: 소켓 닫고 WSACleanup
 void Network_Shutdown();
 
-// 현재 TCP 소켓 반환 (send/recv할 때 사용)
+// 현재 TCP 소켓 반환
 SOCKET Network_GetTCPSocket();
 
 // 연결되어 있는지 여부

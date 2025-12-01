@@ -1,6 +1,5 @@
 #include "renderer.h"
 
-// 다른 모듈의 정보를 가져와서 그려야 하므로 모두 포함
 #include "game_state.h"
 #include "mesh.h"
 #include "shader.h"
@@ -142,8 +141,6 @@ static glm::mat4 RearCameraView()
 
 	return glm::lookAt(cameraPosition, lookAtTarget, upVector);
 }
-
-
 
 
 
@@ -495,7 +492,7 @@ void drawScene()
 
 			int myId = GetMyCarIndex();
 
-			// 차체 중심을 공전 중심으로 설정 (내 차)
+			// 차체 중심을 공전 중심으로 설정
 			glm::vec3 orbitCenter = glm::vec3(Car_GetDX(myId), Car_GetDY(myId), Car_GetDZ(myId));
 
 			// 카메라 위치 계산

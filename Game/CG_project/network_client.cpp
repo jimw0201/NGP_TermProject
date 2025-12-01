@@ -1,9 +1,8 @@
-// network_client.cpp
 #include "network_client.h"
 #include "Protocol.h"
 #include <ws2tcpip.h>
 #include <stdio.h>
-#include <process.h>   // _beginthreadex
+#include <process.h>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -70,7 +69,7 @@ bool Network_Init(const char* serverIp, unsigned short port)
         return false;
     }
 
-    // ---- 여기부터: PlayerID 응답 패킷 받기 ----
+    //  PlayerID 응답 패킷 받기
     S2C_PlayerIdResponsePacket idPkt{};
     int bytesNeeded = sizeof(idPkt);
     int bytesReceived = 0;
@@ -135,7 +134,7 @@ int Network_GetMyPlayerID()
 void Network_SendPlayerInput(const PlayerKey& key)
 {
     if (!g_connected) return;
-    if (g_myPlayerID < 0) return; // 아직 ID 못 받았으면 패킷 안 보냄
+    if (g_myPlayerID < 0) return;
 
     C2S_PlayerUpdatePacket pkt{};
     pkt.type = C2S_PlayerUpdate;
@@ -181,8 +180,6 @@ unsigned __stdcall Network_RecvThread(void* arg)
 
         // 2) 패킷 타입에 따라 나머지 본문 읽기
         if (type == S2C_GameStart) {
-            // 이 패킷은 type 말고 추가 데이터 없음
-            // 필요하면 여기서 "라운드 시작" 플래그 세팅 가능
             continue;
         }
         else if (type == S2C_GameStateUpdate) {
@@ -202,13 +199,11 @@ unsigned __stdcall Network_RecvThread(void* arg)
                 recvd += ret;
             }
 
-            // 최신 상태 갱신
             g_latestState = pkt;
             g_hasLatestState = true;
         }
         else {
-            // (추가 패킷 타입 생기면 여기서 처리)
-            // 지금은 무시
+            // 추가 패킷 타입 생기면 여기서 처리
         }
     }
     return 0;
@@ -220,6 +215,6 @@ bool Network_TryGetLatestGameState(S2C_GameStateUpdatePacket& outPkt)
     if (!g_hasLatestState) return false;
 
     outPkt = g_latestState;
-    g_hasLatestState = false;    // 한 번 읽으면 플래그 내리기 (원하면 유지해도 됨)
+    g_hasLatestState = false;
     return true;
 }

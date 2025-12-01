@@ -1,7 +1,7 @@
 #include "game_state.h"
 #include <gl/glew.h>
 #include "car.h"
-#include "Protocol.h"        // 우리가 만든 클라용 protocol.h
+#include "Protocol.h"
 #include "network_client.h"
 #include "input_handle.h"
 #include "collision.h"
@@ -50,7 +50,7 @@ void GameState_NextStage()
 	// 1. 각도 및 입력 초기화
     for (int i = 0; i < Car_Count(); ++i)
     {
-        Car_SetRotationY(i, 0.0f);      // 만약 이 함수도 per-car라면 이렇게
+        Car_SetRotationY(i, 0.0f);
         Car_SetFrontWheelRotationY(0.0f);
         Car_SetWheelRotationX(i, 0.0f);
     }
@@ -92,14 +92,14 @@ void GameState_NextStage()
 // 현재 로컬(단일) 입력 상태를 CarInput 배열에 복사
 static void GameState_FillInputsFromSingleLocal()
 {
-    // 1) 기본값으로 전체 초기화 (아무 입력도 안 한 상태)
+    // 1) 전체 초기화
     for (int i = 0; i < Car_Count(); ++i)
     {
         g_carInputs[i].accelForward = false;
         g_carInputs[i].accelBackward = false;
         g_carInputs[i].brake = false;
         g_carInputs[i].steering = 0.0f;
-        g_carInputs[i].gear = DRIVE;  // 혹은 각자 상태 따로 둘 거면 나중에 수정
+        g_carInputs[i].gear = DRIVE;
     }
 
     // 2) 네트워크 안 붙었으면 그냥 0번을 내 차로 취급
@@ -151,8 +151,6 @@ static void GameState_ApplyServerState(const S2C_GameStateUpdatePacket& pkt)
 
 
 
-
-
 void GameState_TimerLoop(int value)
 {
     time_t currentTime = time(nullptr);
@@ -178,7 +176,7 @@ void GameState_TimerLoop(int value)
     // =========================
     if (!Network_IsConnected())
     {
-        // (1) 현재 기어 상태 (필요하면 사용)
+        // (1) 현재 기어 상태
         GearState gear = GameState_GetCurrentGear();
 
         // (2) 각 차량 속도 업데이트
@@ -251,7 +249,6 @@ void GameState_TimerLoop(int value)
                         {
                             isColliding = true;
 
-                            // 부딪힌 상대 차량 속도도 0으로
                             Car_SetSpeed(j, 0.0f);
 
                             break;
@@ -290,16 +287,12 @@ void GameState_TimerLoop(int value)
         S2C_GameStateUpdatePacket pkt;
         if (Network_TryGetLatestGameState(pkt))
         {
-            // 여기서 0~MAX_PLAYERS-1 모든 차 위치/회전/바퀴 회전을
-            // 서버에서 온 값으로 덮어씀
             GameState_ApplyServerState(pkt);
         }
     }
 
-    // 키 입력 상태 리셋
     Input_UpdateHandleReturn();
 
-    // 다음 프레임 요청
     glutPostRedisplay();
     glutTimerFunc(16, GameState_TimerLoop, 1);
 }
@@ -316,10 +309,10 @@ const CarInput& GameState_GetCarInput(int idx)
 }
 
 
-// 현재 입력 상태를 PlayerKey로 만들어 서버로 보내는 함수
+// 현재 입력 상태를 PlayerKey로 만들어 서버로 보냄
 static void GameState_SendInputToServer()
 {
-    if (!Network_IsConnected()) return;  // 서버 연결 안 되어 있으면 스킵
+    if (!Network_IsConnected()) return;
 
     PlayerKey key{};
     key.W_Pressed = Input_IsKeyWDown();
@@ -330,7 +323,6 @@ static void GameState_SendInputToServer()
 
     Network_SendPlayerInput(key);
 }
-
 
 
 

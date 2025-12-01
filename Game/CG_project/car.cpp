@@ -380,7 +380,7 @@ int Car_Count()
 	return kCarCount;
 }
 
-// 차별 조향각 (멀티카용)
+// 차별 조향각 (멀티용)
 void Car_SetFrontWheelRotationY(int carIndex, float angle)
 {
 	if (carIndex < 0 || carIndex >= kCarCount) return;

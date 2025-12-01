@@ -11,9 +11,8 @@
 // 기어 상태
 enum GearState { PARK, REVERSE, NEUTRAL, DRIVE };
 
-// =============================
+
 //  키 입력 상태 (클라이언트 → 서버)
-// =============================
 struct PlayerKey {
     bool W_Pressed;
     bool SPACE_Pressed;
@@ -24,9 +23,7 @@ struct PlayerKey {
     float handle_rotate_z;
 };
 
-// =============================
 //  플레이어 차량 상태 (서버 → 클라이언트)
-// =============================
 struct PlayerData {
     int playerID;
 
@@ -47,9 +44,7 @@ struct PlayerData {
     float     car_speed;
 };
 
-// =============================
 //  플레이어 게임 통계 (충돌/주차 정보 등)
-// =============================
 struct PlayerGameStats {
     int   PlayerID;       // 플레이어 ID
     int   CollisionCount; // 충돌 횟수
@@ -58,14 +53,13 @@ struct PlayerGameStats {
     bool  IsEnterParking; // 주차 구역 안에 들어와 있는지 여부
 };
 
-// =============================
+
 //  패킷 타입 구분용 enum
-// =============================
 enum PacketType : uint8_t {
     C2S_PlayerUpdate = 0, // 클라 → 서버 : 입력 전송
     S2C_GameStart,        // 서버 → 클라 : 게임 시작 알림
     S2C_GameStateUpdate,  // 서버 → 클라 : 매 틱 상태 업데이트
-    S2C_GameOver,         // 서버 → 클라 : 게임 종료/결과 (구조체는 다른 데 있을 수도 있음)
+    S2C_GameOver,         // 서버 → 클라 : 게임 종료/결과
     C2S_ReportParked,     // 클라 → 서버 : 주차 완료 보고
     C2S_GameReady,        // 클라 → 서버 : 준비 완료
     S2C_PlayerIdResponse, // 서버 → 클라 : 플레이어 ID 할당
@@ -100,4 +94,4 @@ struct S2C_PlayerIdResponsePacket {
     int        PlayerID; // 0 ~ 3
 };
 
-#endif // PROTOCOL_H_
+#endif
