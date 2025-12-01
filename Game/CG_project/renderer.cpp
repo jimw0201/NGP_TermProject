@@ -8,6 +8,8 @@
 #include "input_handle.h"
 #include "environment.h"
 
+#include "network_client.h"
+
 #include <iostream>
 #include <string>
 #include <gl/glm/glm.hpp>
@@ -108,10 +110,30 @@ static glm::mat4 Gear_Stick()
 	return T * Rx;
 }
 
+// 내 플레이어의 차 인덱스 얻기
+static int GetMyCarIndex()
+{
+	int myId = 0;
+
+	if (Network_IsConnected())
+	{
+		int id = Network_GetMyPlayerID();
+		if (id >= 0 && id < Car_Count())
+		{
+			myId = id;
+		}
+	}
+
+	return myId;
+}
+
+
 static glm::mat4 RearCameraView()
 {
-	glm::vec3 carPosition(Car_GetDX(), Car_GetDY(), Car_GetDZ());
-	float radians = glm::radians(Car_GetRotationY());
+	int myId = GetMyCarIndex();
+
+	glm::vec3 carPosition(Car_GetDX(myId), Car_GetDY(myId), Car_GetDZ(myId));
+	float radians = glm::radians(Car_GetRotationY(myId));
 	glm::vec3 carDirection(-sin(radians), 0.0f, -cos(radians));
 
 	glm::vec3 cameraPosition = carPosition + carDirection * 0.45f + glm::vec3(0.0f, 0.15f, 0.0f);
@@ -120,6 +142,9 @@ static glm::mat4 RearCameraView()
 
 	return glm::lookAt(cameraPosition, lookAtTarget, upVector);
 }
+
+
+
 
 
 // 그리기 함수들
@@ -468,15 +493,23 @@ void drawScene()
 				glEnable(GL_DEPTH_TEST);
 			}
 
-			// 차체 중심을 공전 중심으로 설정
-			glm::vec3 orbitCenter = glm::vec3(Car_GetDX(), Car_GetDY(), Car_GetDZ());
+			int myId = GetMyCarIndex();
+
+			// 차체 중심을 공전 중심으로 설정 (내 차)
+			glm::vec3 orbitCenter = glm::vec3(Car_GetDX(myId), Car_GetDY(myId), Car_GetDZ(myId));
 
 			// 카메라 위치 계산
 			float cameraDistance = Input_GetCameraDZ();
 			glm::vec3 cameraDirection = glm::vec3(0.0f, 0.0f, -1.0f);
 			glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
-			glm::mat4 cameraRotateMat = glm::rotate(glm::mat4(1.0f), glm::radians(Input_GetCameraRotateY()), glm::vec3(0.0, 1.0, 0.0));
+			float carRotY = Car_GetRotationY(myId);
+			float totalYawRad = glm::radians(carRotY + Input_GetCameraRotateY());
+
+			glm::mat4 cameraRotateMat = glm::rotate(
+				glm::mat4(1.0f),
+				totalYawRad,                   
+				glm::vec3(0.0, 1.0, 0.0));
 			glm::vec3 cameraOffset = glm::vec3(cameraRotateMat * glm::vec4(0.0f, 1.9f, cameraDistance, 1.0f)); // Y축으로 살짝 올림
 			glm::vec3 cameraPos = orbitCenter + cameraOffset;
 
