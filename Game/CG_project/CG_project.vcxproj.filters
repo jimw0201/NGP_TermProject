@@ -40,6 +40,12 @@
     <Filter Include="헤더 파일\System">
       <UniqueIdentifier>{8a200751-444c-441b-a3fd-15ccd817cfd6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="소스 파일\Network">
+      <UniqueIdentifier>{0d029ec5-6f31-4caf-be77-82788d924e59}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\network">
+      <UniqueIdentifier>{374eb9b5-98fb-4161-8c2c-739b1d03fd78}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -68,6 +74,9 @@
     </ClCompile>
     <ClCompile Include="input_handle.cpp">
       <Filter>소스 파일\System</Filter>
+    </ClCompile>
+    <ClCompile Include="network_client.cpp">
+      <Filter>소스 파일\Network</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -102,6 +111,12 @@
     </ClInclude>
     <ClInclude Include="input_handle.h">
       <Filter>헤더 파일\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol.h">
+      <Filter>헤더 파일\System</Filter>
+    </ClInclude>
+    <ClInclude Include="network_client.h">
+      <Filter>헤더 파일\network</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
