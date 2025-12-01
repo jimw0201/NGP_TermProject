@@ -15,6 +15,8 @@ static const float acceleration = 0.001f;
 static const float deceleration = 0.005f;
 static const float friction = 0.0001f;
 
+void Car_InitForStage(int stage);
+
 void Car_UpdateSpeed(const CarInput& input, int carIndex)
 {
 	float& speed = g_cars[carIndex].speed;
@@ -82,17 +84,48 @@ void Car_UpdateSpeed(const CarInput& input)
 
 void Car_Init()
 {
-	// 일단 차 4대를 X축으로 옆에 나란히 놓고 테스트
-	float startX[kCarCount] = { -4.5f, -1.5f, 1.5f, 4.5f };
+	Car_InitForStage(1);
+}
 
+// 스테이지별 시작 위치/회전 설정
+void Car_InitForStage(int stage)
+{
 	for (int i = 0; i < kCarCount; ++i)
 	{
-		g_cars[i].dx = startX[i];
-		g_cars[i].dy = WHEEL_SIZE;
-		g_cars[i].dz = -3.0f;
-		g_cars[i].rotY = 0.0f;
-		g_cars[i].wheelRotX = 0.0f;
+		g_cars[i].dy = 0.125f;
 		g_cars[i].speed = 0.0f;
+		g_cars[i].wheelRotX = 0.0f;
+	}
+
+	switch (stage)
+	{
+	case 1:
+		// 스테이지 1 플레이어 배치
+		g_cars[0].dx = 4.5f; g_cars[0].dz = -4.5f; g_cars[0].rotY = 0.0f;
+		g_cars[1].dx = 4.5f; g_cars[1].dz = 4.5f; g_cars[1].rotY = -90.0f;
+		g_cars[2].dx = -4.5f; g_cars[2].dz = 4.5f; g_cars[2].rotY = 180.0f;
+		g_cars[3].dx = -4.5f; g_cars[3].dz = -4.5f; g_cars[3].rotY = 90.0f;
+		break;
+
+	case 2:
+		// 스테이지 2 플레이어 배치
+		g_cars[0].dx = 0.0f; g_cars[0].dz = -6.0f; g_cars[0].rotY = 0.0f;
+		g_cars[1].dx = 2.0f; g_cars[1].dz = -6.0f; g_cars[1].rotY = 0.0f;
+		g_cars[2].dx = -2.0f; g_cars[2].dz = -6.0f; g_cars[2].rotY = 0.0f;
+		g_cars[3].dx = 0.0f; g_cars[3].dz = -8.0f; g_cars[3].rotY = 0.0f;
+		break;
+
+	case 3:
+		// 스테이지 3 플레이어 배치
+		g_cars[0].dx = -6.0f; g_cars[0].dz = -4.0f; g_cars[0].rotY = 90.0f;
+		g_cars[1].dx = -6.0f; g_cars[1].dz = 0.0f; g_cars[1].rotY = 90.0f;
+		g_cars[2].dx = -6.0f; g_cars[2].dz = 4.0f; g_cars[2].rotY = 90.0f;
+		g_cars[3].dx = -2.0f; g_cars[3].dz = -4.0f; g_cars[3].rotY = 0.0f;
+		break;
+
+	default:
+		Car_InitForStage(1);
+		break;
 	}
 
 	front_wheels_rotateY = 0.0f;
@@ -101,22 +134,23 @@ void Car_Init()
 	isBraking = false;
 }
 
+
 // 차체의 변환 - 이를 기준으로 헤드라이트, 바퀴 등의 위치가 정해진다.
 glm::mat4 Car_Body(int carIndex)
 {
-    glm::mat4 T = glm::mat4(1.0f);
-    glm::mat4 Ry = glm::mat4(1.0f);
+	glm::mat4 T = glm::mat4(1.0f);
+	glm::mat4 Ry = glm::mat4(1.0f);
 
 	Ry = glm::rotate(Ry, glm::radians(g_cars[carIndex].rotY), glm::vec3(0.0, 1.0, 0.0));
 	T = glm::translate(T,
 		glm::vec3(g_cars[carIndex].dx, g_cars[carIndex].dy, g_cars[carIndex].dz));
 
-    return T * Ry;
+	return T * Ry;
 }
 
 glm::mat4 Car_Body()
 {
-    return Car_Body(0);
+	return Car_Body(0);
 }
 
 glm::mat4 Headlights(int left_right, int carIndex)

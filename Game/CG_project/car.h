@@ -11,6 +11,14 @@
 // 차량 수
 static const int kCarCount = 4;
 
+enum PlayerId
+{
+    PLAYER_1 = 0,
+    PLAYER_2 = 1,
+    PLAYER_3 = 2,
+    PLAYER_4 = 3
+};
+
 // 각 차량의 상태(위치, 회전, 속도 등)를 하나로 묶은 구조체
 struct CarState
 {

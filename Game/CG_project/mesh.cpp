@@ -32,9 +32,9 @@ static const float FINISH_SIZE_2 = 0.9f;
 // #define GROUND_SIZE 5.0f
 // #define WALL_HEIGHT 0.5f
 // #define WALL_THICKNESS 0.1f
-const float GROUND_SIZE = 5.0f;
+const float GROUND_SIZE = 6.0f;
 static const float WALL_HEIGHT = 0.5f;
-const float WALL_THICKNESS = 0.1f;
+const float WALL_THICKNESS = 0.2f;
 
 const float fheight = 0.75f;
 const float fy = 0.0001f;

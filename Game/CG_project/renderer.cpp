@@ -32,6 +32,14 @@ static GLfloat lightY = 5.0f;
 static GLfloat lightZ = 1.0f;
 static float light = 0.8f;
 
+// 플레이어별 차 몸체 색 (1P~4P)
+static const glm::vec3 g_playerBodyColors[kCarCount] = {
+	glm::vec3(1.0f, 0.0f, 0.0f),	// 1P: 빨강
+	glm::vec3(1.0f, 0.0f, 1.0f),	// 2P: 핑크
+	glm::vec3(0.55f, 0.27f, 0.07f), // 3P: 갈색
+	glm::vec3(0.0f, 0.0f, 1.0f)		// 4P: 파랑
+};
+
 // 텍스트 렌더링
 static void RenderBitmapString(float x, float y, void* font, const char* string)
 {
@@ -239,7 +247,9 @@ static void drawCar(int modelLoc, int carIndex)
 	int objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 
 	// 차체
-	glUniform3f(objColorLocation, 0.0f, 0.0f, 0.9f);
+	glm::vec3 bodyColor = g_playerBodyColors[carIndex];
+	glUniform3f(objColorLocation, bodyColor.r, bodyColor.g, bodyColor.b);
+
 	glBindVertexArray(vao[1]);
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Car_Body(carIndex)));
 	glDrawArrays(GL_TRIANGLES, 0, 6 * 6);
@@ -300,80 +310,109 @@ static void drawGround(int modelLoc)
 static void drawFinishRect(int modelLoc)
 {
 	int objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
-	glUniform3f(objColorLocation, 1.0f, 1.0f, 1.0f);
-	if (GameState_IsParked())
-	{
-		glUniform3f(objColorLocation, 0.0f, 1.0f, 0.0f);
-	}
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetFinishRectMatrix()));
-	glBindVertexArray(vao[5]);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
 
-	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
-	glUniform3f(objColorLocation, 0.5f, 0.5f, 0.5f);
-	glDrawArrays(GL_TRIANGLES, 6, 6);
+	glBindVertexArray(vao[5]);
+
+	// 4개의 주차장 그리기
+	for (int i = 0; i < 4; i++)
+	{
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetFinishRectMatrix(i)));
+
+		// 주차장 색상 지정
+		if (GameState_IsParked())
+		{
+			// 주차 성공 시 초록색으로 표시
+			glUniform3f(objColorLocation, 0.0f, 1.0f, 0.0f);
+		}
+		else
+		{
+			switch (i)
+			{
+			case 0:
+				glUniform3f(objColorLocation, 0.0f, 0.0f, 1.0f);
+				break;
+			case 1:
+				glUniform3f(objColorLocation, 1.0f, 0.0f, 0.0f);
+				break;
+			case 2: // 갈색으로 수정
+				glUniform3f(objColorLocation, 0.55f, 0.27f, 0.07f);
+				break;
+			case 3:
+				glUniform3f(objColorLocation, 1.0f, 0.0f, 1.0f);
+				break;
+			}
+		}
+
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		glUniform3f(objColorLocation, 0.5f, 0.5f, 0.5f);
+		glDrawArrays(GL_TRIANGLES, 6, 6);
+	}
 }
 
 static void drawObstacleCars(int modelLoc)
 {
-	int objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
-	// 장식용 주차공간
-	glBindVertexArray(vao[8]);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetObstacleMatrix(0)));
-	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
-	glUniform3f(objColorLocation, 1.0f, 1.0f, 1.0f);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
-	glUniform3f(objColorLocation, 0.5f, 0.5f, 0.5f);
-	glDrawArrays(GL_TRIANGLES, 6, 6);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetObstacleMatrix(1)));
-	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
-	glUniform3f(objColorLocation, 1.0f, 1.0f, 1.0f);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
-	glUniform3f(objColorLocation, 0.5f, 0.5f, 0.5f);
-	glDrawArrays(GL_TRIANGLES, 6, 6);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetObstacleMatrix(2)));
-	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
-	glUniform3f(objColorLocation, 1.0f, 1.0f, 1.0f);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
-	glUniform3f(objColorLocation, 0.5f, 0.5f, 0.5f);
-	glDrawArrays(GL_TRIANGLES, 6, 6);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetObstacleMatrix(3)));
-	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
-	glUniform3f(objColorLocation, 1.0f, 1.0f, 1.0f);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
-	glUniform3f(objColorLocation, 0.5f, 0.5f, 0.5f);
-	glDrawArrays(GL_TRIANGLES, 6, 6);
-	if (GameState_GetCurrentStage() == 3)
+	int currentStage = GameState_GetCurrentStage();
+
+	// 3스테이지(벽)가 아닐 때만 주차선 그리기
+	if (currentStage != 3)
 	{
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetObstacleMatrix(4)));
-		objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
-		glUniform3f(objColorLocation, 1.0f, 1.0f, 1.0f);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
-		glUniform3f(objColorLocation, 0.5f, 0.5f, 0.5f);
-		glDrawArrays(GL_TRIANGLES, 6, 6);
+		glBindVertexArray(vao[8]);
+		int objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
+
+		for (int i = 0; i < 4; i++)
+		{
+			for (int j = 0; j < 5; j++)
+			{
+				glm::mat4 obsMat = Environment_GetObstacleMatrix(i, j);
+
+				if (obsMat[3][0] > 50.0f) continue;
+
+				glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(obsMat));
+
+				// 바깥쪽 선 (흰색)
+				glUniform3f(objColorLocation, 1.0f, 1.0f, 1.0f);
+				glDrawArrays(GL_TRIANGLES, 0, 6);
+
+				// 안쪽 채움 (회색)
+				glUniform3f(objColorLocation, 0.5f, 0.5f, 0.5f);
+				glDrawArrays(GL_TRIANGLES, 6, 6);
+			}
+		}
 	}
 
-	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
-	glUniform3f(objColorLocation, 0.25f, 0.25f, 0.25f);
-	// 장애물
-	glBindVertexArray(vao[9]);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetObstacleMatrix(0)));
-	glDrawArrays(GL_TRIANGLES, 0, TRI_COUNT * 3);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetObstacleMatrix(1)));
-	glDrawArrays(GL_TRIANGLES, 0, TRI_COUNT * 3);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetObstacleMatrix(2)));
-	glDrawArrays(GL_TRIANGLES, 0, TRI_COUNT * 3);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetObstacleMatrix(3)));
-	glDrawArrays(GL_TRIANGLES, 0, TRI_COUNT * 3);
-	if (GameState_GetCurrentStage() == 3)
+	int objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
+	glBindVertexArray(vao[9]); // 큐브 모델 바인딩
+
+
+	// 3라운드 : 긴 벽 2개 그리기
+	if (currentStage == 3)
 	{
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetObstacleMatrix(4)));
-		glDrawArrays(GL_TRIANGLES, 0, TRI_COUNT * 3);
+		glUniform3f(objColorLocation, 0.0f, 0.0f, 0.0f); // 검은색
+
+		// 벽 2개 그리기
+		for (int j = 0; j < 2; j++)
+		{
+			glm::mat4 obsMat = Environment_GetObstacleMatrix(0, j);
+
+			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(obsMat));
+			glDrawArrays(GL_TRIANGLES, 0, TRI_COUNT * 3);
+		}
+	}
+	// 1,2 라운드 작은 박스들 그리기
+	else
+	{
+		glUniform3f(objColorLocation, 0.25f, 0.25f, 0.25f);
+
+		for (int i = 0; i < 4; i++)
+		{
+			for (int j = 0; j < 5; j++) // 5개의 장애물 그리기
+			{
+				glm::mat4 obsMat = Environment_GetObstacleMatrix(i, j);
+				glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(obsMat));
+				glDrawArrays(GL_TRIANGLES, 0, TRI_COUNT * 3);
+			}
+		}
 	}
 }
 

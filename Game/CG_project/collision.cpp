@@ -1,6 +1,8 @@
 #include "collision.h"
 #include "environment.h" 
-#include "mesh.h"        
+#include "mesh.h"      
+#include <cmath>
+#include <algorithm>
 
 // 1. 점이 다각형 내부에 있는지 검사
 bool isPointInsidePolygon(const std::vector<std::pair<float, float>>& polygon, float x, float z)
@@ -62,53 +64,74 @@ bool checkCollisionWalls(const std::vector<std::pair<float, float>>& carCorners,
 	return false;
 }
 
-// 4. 장애물 충돌 검사
 bool checkCollisionObstacle(const std::vector<std::pair<float, float>>& carCorners)
 {
-	for (const auto& obstacle : obstacle_xz)
+	for (int p = 0; p < 4; ++p)          // 주차장 4개
 	{
-		float obstacleMinX = obstacle[0] - OBSTACLE_WIDTH;
-		float obstacleMaxX = obstacle[0] + OBSTACLE_WIDTH;
-		float obstacleMinZ = obstacle[1] - OBSTACLE_HEIGHT;
-		float obstacleMaxZ = obstacle[1] + OBSTACLE_HEIGHT;
-
-		for (const auto& corner : carCorners)
+		for (int i = 0; i < 5; ++i)      // 각 주차장의 장애물 슬롯 5개
 		{
-			if (obstacleMinX <= corner.first && corner.first <= obstacleMaxX &&
-				obstacleMinZ <= corner.second && corner.second <= obstacleMaxZ)
+			float ox = obstacle_xz[p][i][0];
+			float oz = obstacle_xz[p][i][1];
+
+			if (ox == 100.0f && oz == 100.0f)
+				continue;
+
+			// 크기 가져오기
+			float currentExtentX = OBSTACLE_WIDTH * obstacle_scale[p][i].x;
+			float currentExtentZ = OBSTACLE_HEIGHT * obstacle_scale[p][i].z;
+
+			// 회전 적용
+			// 90도 회전되어 있다면 가로/세로 길이를 서로 바꿈
+			if (std::abs(obstacle_ry[p][i]) > 1.0f)
 			{
-				return true;
+				std::swap(currentExtentX, currentExtentZ);
 			}
-		}
 
-		std::vector<std::pair<float, float>> obstacleCorners = {
-			{obstacleMinX, obstacleMinZ},
-			{obstacleMaxX, obstacleMinZ},
-			{obstacleMaxX, obstacleMaxZ},
-			{obstacleMinX, obstacleMaxZ}
-		};
+			// 계산된 크기로 충돌 박스(AABB) 범위 설정
+			float obstacleMinX = ox - currentExtentX;
+			float obstacleMaxX = ox + currentExtentX;
+			float obstacleMinZ = oz - currentExtentZ;
+			float obstacleMaxZ = oz + currentExtentZ;
 
-		for (const auto& corner : obstacleCorners)
-		{
-			if (isPointInsidePolygon(carCorners, corner.first, corner.second))
+			// 꼭짓점 포함 여부 (Point in AABB)
+			for (const auto& corner : carCorners)
 			{
-				return true;
-			}
-		}
-
-		int carSize = carCorners.size();
-		int obstacleSize = obstacleCorners.size();
-		for (int i = 0; i < carSize; ++i)
-		{
-			for (int j = 0; j < obstacleSize; ++j)
-			{
-				if (doLinesIntersect(
-					carCorners[i].first, carCorners[i].second,
-					carCorners[(i + 1) % carSize].first, carCorners[(i + 1) % carSize].second,
-					obstacleCorners[j].first, obstacleCorners[j].second,
-					obstacleCorners[(j + 1) % obstacleSize].first, obstacleCorners[(j + 1) % obstacleSize].second))
+				if (obstacleMinX <= corner.first && corner.first <= obstacleMaxX &&
+					obstacleMinZ <= corner.second && corner.second <= obstacleMaxZ)
 				{
 					return true;
+				}
+			}
+
+			std::vector<std::pair<float, float>> obstacleCorners = {
+				{obstacleMinX, obstacleMinZ},
+				{obstacleMaxX, obstacleMinZ},
+				{obstacleMaxX, obstacleMaxZ},
+				{obstacleMinX, obstacleMaxZ}
+			};
+
+			// 차가 장애물 안에 있는지 (Point in Polygon)
+			for (const auto& corner : obstacleCorners)
+			{
+				if (isPointInsidePolygon(carCorners, corner.first, corner.second))
+					return true;
+			}
+
+			// 선분 교차 검사 (Line Intersection)
+			int carSize = carCorners.size();
+			int obstacleSize = obstacleCorners.size();
+			for (int i = 0; i < carSize; ++i)
+			{
+				for (int j = 0; j < obstacleSize; ++j)
+				{
+					if (doLinesIntersect(
+						carCorners[i].first, carCorners[i].second,
+						carCorners[(i + 1) % carSize].first, carCorners[(i + 1) % carSize].second,
+						obstacleCorners[j].first, obstacleCorners[j].second,
+						obstacleCorners[(j + 1) % obstacleSize].first, obstacleCorners[(j + 1) % obstacleSize].second))
+					{
+						return true;
+					}
 				}
 			}
 		}
@@ -116,6 +139,7 @@ bool checkCollisionObstacle(const std::vector<std::pair<float, float>>& carCorne
 
 	return false;
 }
+
 
 bool checkCollisionCars(
 	const std::vector<std::pair<float, float>>& carCornersA,
