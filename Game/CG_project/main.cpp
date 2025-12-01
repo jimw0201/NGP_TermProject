@@ -21,6 +21,8 @@
 #include "environment.h"
 #include "renderer.h"
 
+#include "network_client.h"
+
 // 클라이언트
 #define clientWidth 900
 #define clientHeight 600
@@ -50,6 +52,20 @@ int main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
 	else
 		std::cout << "GLEW Initialized\n";
 
+	// 2. 네트워크 초기화
+	//    - 서버 IP/포트는 일단 로컬 테스트 기준
+	//    - 나중에 설정 파일이나 인자에서 받아도 됨
+	if (Network_Init("127.0.0.1", 9000))
+	{
+		printf("[Client] 서버 연결 성공!\n");
+	}
+	else
+	{
+		printf("[Client] 서버 연결 실패. 오프라인 모드로 실행합니다.\n");
+		// 여기서 실패했다고 프로그램을 바로 종료할지,
+		// 싱글 모드로 계속 돌릴지는 네가 선택
+	}
+
 	GameState_Init(); 
 	Car_Init();       
 	Input_Init();     
@@ -69,4 +85,7 @@ int main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
 	glutTimerFunc(TIMER_VELOCITY, GameState_TimerLoop, 1);
 
 	glutMainLoop();
+
+	Network_Shutdown();
+	return 0;
 }
