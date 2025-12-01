@@ -1,6 +1,8 @@
 #include "game_state.h"
 #include <gl/glew.h>
 #include "car.h"
+#include "Protocol.h"        // 우리가 만든 클라용 protocol.h
+#include "network_client.h"
 #include "input_handle.h"
 #include "collision.h"
 #include "environment.h"
@@ -26,6 +28,8 @@ static bool isClear = false;
 // 각 차량의 현재 입력 상태 (멀티 대비용)
 static CarInput g_carInputs[kCarCount];
 
+static void GameState_SendInputToServer();
+
 // --- 함수 구현 ---
 void GameState_Init()
 {
@@ -44,9 +48,12 @@ void GameState_Init()
 void GameState_NextStage()
 {
 	// 1. 각도 및 입력 초기화
-	Car_SetRotationY(0.0f);
-	Car_SetFrontWheelRotationY(0.0f);
-	Car_SetWheelRotationX(0.0f);
+    for (int i = 0; i < Car_Count(); ++i)
+    {
+        Car_SetRotationY(i, 0.0f);      // 만약 이 함수도 per-car라면 이렇게
+        Car_SetFrontWheelRotationY(0.0f);
+        Car_SetWheelRotationX(i, 0.0f);
+    }
 
 	Input_ResetHandle();
 
@@ -68,17 +75,12 @@ void GameState_NextStage()
 
 		// 환경(맵) 설정
 		Environment_SetupStage(2);
-
-		// 차 위치 설정
-		Car_SetPosition(2.0f, -4.0f);
 	}
 	else if (current_stage == 2)
 	{
 		current_stage++;
 
 		Environment_SetupStage(3);
-
-		Car_SetPosition(-4.0f, -4.0f);
 	}
 	else if (current_stage == 3)
 	{
@@ -90,148 +92,218 @@ void GameState_NextStage()
 // 현재 로컬(단일) 입력 상태를 CarInput 배열에 복사
 static void GameState_FillInputsFromSingleLocal()
 {
-    // car.cpp의 전역 입력 상태 읽기
+    // 1) 기본값으로 전체 초기화 (아무 입력도 안 한 상태)
+    for (int i = 0; i < Car_Count(); ++i)
+    {
+        g_carInputs[i].accelForward = false;
+        g_carInputs[i].accelBackward = false;
+        g_carInputs[i].brake = false;
+        g_carInputs[i].steering = 0.0f;
+        g_carInputs[i].gear = DRIVE;  // 혹은 각자 상태 따로 둘 거면 나중에 수정
+    }
+
+    // 2) 네트워크 안 붙었으면 그냥 0번을 내 차로 취급
+    int myId = 0;
+    if (Network_IsConnected())
+    {
+        int id = Network_GetMyPlayerID();
+        if (id >= 0 && id < Car_Count())
+            myId = id;
+    }
+
+    // 3) 내 차(myId)에만 실제 키 입력을 반영
     bool  accelF = Car_IsAcceleratingForward();
     bool  accelB = Car_IsAcceleratingBackward();
     bool  brake = Car_IsBraking();
     float steer = Car_GetFrontWheelRotationY();
     GearState gear = GameState_GetCurrentGear();
 
-    // 일단은 4대 모두 같은 입력으로 채움
-    for (int i = 0; i < Car_Count(); ++i)
+    g_carInputs[myId].accelForward = accelF;
+    g_carInputs[myId].accelBackward = accelB;
+    g_carInputs[myId].brake = brake;
+    g_carInputs[myId].steering = steer;
+    g_carInputs[myId].gear = gear;
+}
+
+
+static void GameState_ApplyServerState(const S2C_GameStateUpdatePacket& pkt)
+{
+    GameState_SetElapsedSeconds(pkt.srvElapsedSec);
+
+    int carCount = Car_Count();
+    for (int i = 0; i < carCount && i < MAX_PLAYERS; ++i)
     {
-        g_carInputs[i].accelForward = accelF;
-        g_carInputs[i].accelBackward = accelB;
-        g_carInputs[i].brake = brake;
-        g_carInputs[i].steering = steer;
-        g_carInputs[i].gear = gear;
+        const PlayerData& p = pkt.playerData[i];
+
+        Car_SetPosition(i, p.car_dx, p.car_dz);
+        Car_SetRotationY(i, p.car_rotateY);
+        Car_SetWheelRotationX(i, p.wheel_rect_rotateX);
+        Car_SetFrontWheelRotationY(i, p.front_wheels_rotateY);
+    }
+
+    int myId = Network_GetMyPlayerID();
+    if (myId >= 0 && myId < MAX_PLAYERS)
+    {
+        const PlayerGameStats& stats = pkt.PlayerStats[myId];
+        GameState_SetParked(stats.IsParked);
     }
 }
+
+
+
 
 
 void GameState_TimerLoop(int value)
 {
     time_t currentTime = time(nullptr);
 
+    // 일시정지가 아닐 때만 경과 시간 갱신
     if (!GameState_IsPaused())
     {
         GameState_SetElapsedSeconds(
             static_cast<int>(currentTime - GameState_GetPauseTime() - GameState_GetStartTime()));
     }
 
-    // 이번 프레임의 입력 상태를 CarInput 배열에 정리
+    // 네트워크 연결되어 있으면 서버로 내 입력 전송
+    if (Network_IsConnected())
+    {
+        GameState_SendInputToServer();
+    }
+
+    // 현재 키 입력 상태를 CarInput 배열(g_carInputs)에 반영
     GameState_FillInputsFromSingleLocal();
 
-    // 1) 현재 기어 상태 가져오기
-    GearState gear = GameState_GetCurrentGear();
-
-    // 2) 모든 차량 속도 업데이트 (입력은 공유)
-    for (int i = 0; i < Car_Count(); ++i)
+    // =========================
+    // 1) 싱글플레이(로컬 물리 계산)
+    // =========================
+    if (!Network_IsConnected())
     {
-        const CarInput& input = GameState_GetCarInput(i);
-        Car_UpdateSpeed(input, i);
-    }
+        // (1) 현재 기어 상태 (필요하면 사용)
+        GearState gear = GameState_GetCurrentGear();
 
-    // 3) 주차 상태는 0번 차 기준으로만 체크 (카메라도 0번 기준이니까)
-    {
-        auto carCorners0 = Car_GetRotatedCorners(0);
-        Environment_UpdateParkingStatus(carCorners0);
-    }
-
-    // 4) 각 차량별 이동 + 충돌 처리
-    for (int i = 0; i < Car_Count(); ++i)
-    {
-        if (Car_GetSpeed(i) == 0.0f) continue;
-
-        float radians = glm::radians(Car_GetRotationY(i));
-        float new_dx = Car_GetDX(i) + Car_GetSpeed(i) * sin(radians);
-        float new_dz = Car_GetDZ(i) + Car_GetSpeed(i) * cos(radians);
-
-        const float n = 2.0f;
-
-        const CarInput& input = GameState_GetCarInput(i);
-        float steering = input.steering;
-
-        float newAngle =
-            Car_GetRotationY(i) + steering * n * Car_GetSpeed(i);
-
-
-        // i번 차의 "미래 위치" 꼭짓점
-        auto futureCarCorners = Car_GetRotatedCorners(new_dx, new_dz, newAngle);
-
-        bool isColliding = false;
-
-        if (!GameState_IsInvincible())
+        // (2) 각 차량 속도 업데이트
+        for (int i = 0; i < Car_Count(); ++i)
         {
-            // 1) 벽과의 충돌 검사
-            for (int w = 0; w < 4 && !isColliding; ++w)
-            {
-                float wallX = (w % 2 == 0) ? 0.0f : (w == 1 ? GROUND_SIZE : -GROUND_SIZE);
-                float wallZ = (w % 2 == 1) ? 0.0f : (w == 2 ? GROUND_SIZE : -GROUND_SIZE);
-                float wallWidth = (w % 2 == 0) ? GROUND_SIZE * 2 : WALL_THICKNESS;
-                float wallHeight = (w % 2 == 1) ? GROUND_SIZE * 2 : WALL_THICKNESS;
+            const CarInput& input = GameState_GetCarInput(i);
+            Car_UpdateSpeed(input, i);
+        }
 
-                if (checkCollisionWalls(futureCarCorners, wallX, wallZ, wallWidth, wallHeight))
+        // (3) 0번 차량의 주차 영역 판정
+        {
+            auto carCorners0 = Car_GetRotatedCorners(0);
+            Environment_UpdateParkingStatus(carCorners0);
+        }
+
+        // (4) 차량 이동 + 충돌 처리(벽, 장애물, 다른 차량)
+        for (int i = 0; i < Car_Count(); ++i)
+        {
+            if (Car_GetSpeed(i) == 0.0f) continue;
+
+            float radians = glm::radians(Car_GetRotationY(i));
+            float new_dx = Car_GetDX(i) + Car_GetSpeed(i) * sin(radians);
+            float new_dz = Car_GetDZ(i) + Car_GetSpeed(i) * cos(radians);
+
+            const float n = 2.0f;
+
+            const CarInput& input = GameState_GetCarInput(i);
+            float steering = input.steering;
+
+            float newAngle =
+                Car_GetRotationY(i) + steering * n * Car_GetSpeed(i);
+
+            // i번 차를 new_dx/new_dz/newAngle 만큼 옮겼을 때의 모서리 좌표
+            auto futureCarCorners = Car_GetRotatedCorners(new_dx, new_dz, newAngle);
+
+            bool isColliding = false;
+
+            if (!GameState_IsInvincible())
+            {
+                // 1) 경기장 네 벽과의 충돌 검사
+                for (int w = 0; w < 4 && !isColliding; ++w)
+                {
+                    float wallX = (w % 2 == 0) ? 0.0f : (w == 1 ? GROUND_SIZE : -GROUND_SIZE);
+                    float wallZ = (w % 2 == 1) ? 0.0f : (w == 2 ? GROUND_SIZE : -GROUND_SIZE);
+                    float wallWidth = (w % 2 == 0) ? GROUND_SIZE * 2 : WALL_THICKNESS;
+                    float wallHeight = (w % 2 == 1) ? GROUND_SIZE * 2 : WALL_THICKNESS;
+
+                    if (checkCollisionWalls(futureCarCorners, wallX, wallZ, wallWidth, wallHeight))
+                    {
+                        isColliding = true;
+                    }
+                }
+
+                // 2) 장애물과의 충돌 검사
+                if (!isColliding && checkCollisionObstacle(futureCarCorners))
                 {
                     isColliding = true;
                 }
-            }
 
-            // 2) 장애물과의 충돌 검사
-            if (!isColliding && checkCollisionObstacle(futureCarCorners))
-            {
-                isColliding = true;
-            }
-
-            // 3) 다른 차들과의 충돌 검사
-            if (!isColliding)
-            {
-                for (int j = 0; j < Car_Count(); ++j)
+                // 3) 다른 차량과의 충돌 검사
+                if (!isColliding)
                 {
-                    if (j == i) continue;
-
-                    // j번 차의 "현재 위치" 꼭짓점
-                    auto otherCarCorners = Car_GetRotatedCorners(j);
-
-                    if (checkCollisionCars(futureCarCorners, otherCarCorners))
+                    for (int j = 0; j < Car_Count(); ++j)
                     {
-                        isColliding = true;
+                        if (j == i) continue;
 
-                        // 둘 다 멈추게 하고 싶으면 j번 차 속도도 0으로
-                        Car_SetSpeed(j, 0.0f);
+                        auto otherCarCorners = Car_GetRotatedCorners(j);
 
-                        break;
+                        if (checkCollisionCars(futureCarCorners, otherCarCorners))
+                        {
+                            isColliding = true;
+
+                            // 부딪힌 상대 차량 속도도 0으로
+                            Car_SetSpeed(j, 0.0f);
+
+                            break;
+                        }
                     }
                 }
             }
-        }
 
-        if (!isColliding)
-        {
-            Car_SetRotationY(i, newAngle);
-            Car_SetPosition(i, new_dx, new_dz);
-
-            float newWheelAngle =
-                Car_GetWheelRotationX(i) + Car_GetSpeed(i) * 200.0f;
-            Car_SetWheelRotationX(i, newWheelAngle);
-        }
-        else
-        {
-            if (i == 0)
+            if (!isColliding)
             {
-                GameState_SetCrushed(true);
+                // 실제로 이동/회전 및 바퀴 회전 적용
+                Car_SetRotationY(i, newAngle);
+                Car_SetPosition(i, new_dx, new_dz);
+
+                float newWheelAngle =
+                    Car_GetWheelRotationX(i) + Car_GetSpeed(i) * 200.0f;
+                Car_SetWheelRotationX(i, newWheelAngle);
             }
-            Car_SetSpeed(i, 0.0f);
+            else
+            {
+                // 0번 플레이어(내 차)가 부딪히면 crushed 처리
+                if (i == 0)
+                {
+                    GameState_SetCrushed(true);
+                }
+                Car_SetSpeed(i, 0.0f);
+            }
         }
     }
 
+    // =========================
+    // 2) 멀티플레이(서버 권위 상태 적용)
+    // =========================
+    if (Network_IsConnected())
+    {
+        S2C_GameStateUpdatePacket pkt;
+        if (Network_TryGetLatestGameState(pkt))
+        {
+            // 여기서 0~MAX_PLAYERS-1 모든 차 위치/회전/바퀴 회전을
+            // 서버에서 온 값으로 덮어씀
+            GameState_ApplyServerState(pkt);
+        }
+    }
 
-    // 핸들 복원은 한 번만
+    // 키 입력 상태 리셋
     Input_UpdateHandleReturn();
 
+    // 다음 프레임 요청
     glutPostRedisplay();
     glutTimerFunc(16, GameState_TimerLoop, 1);
 }
+
 
 CarInput* GameState_GetCarInputs()
 {
@@ -242,6 +314,24 @@ const CarInput& GameState_GetCarInput(int idx)
 {
     return g_carInputs[idx];
 }
+
+
+// 현재 입력 상태를 PlayerKey로 만들어 서버로 보내는 함수
+static void GameState_SendInputToServer()
+{
+    if (!Network_IsConnected()) return;  // 서버 연결 안 되어 있으면 스킵
+
+    PlayerKey key{};
+    key.W_Pressed = Input_IsKeyWDown();
+    key.SPACE_Pressed = Input_IsKeySpaceDown();
+    key.Q_Pressed = Input_IsKeyQDown();
+    key.E_Pressed = Input_IsKeyEDown();
+    key.handle_rotate_z = Input_GetHandleRotation();
+
+    Network_SendPlayerInput(key);
+}
+
+
 
 
 // --- Getters ---

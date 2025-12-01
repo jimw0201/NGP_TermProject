@@ -2,15 +2,8 @@
 #define GAME_STATE_H
 
 #include <ctime>
+#include "Protocol.h"
 
-// 차량 기어 상태를 나타내는 열거형
-enum GearState
-{
-	PARK,
-	REVERSE,
-	NEUTRAL,
-	DRIVE
-};
 
 // 멀티 대비용: 한 차량의 입력 상태
 struct CarInput
