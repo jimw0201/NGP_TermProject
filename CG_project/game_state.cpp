@@ -23,6 +23,8 @@ static int current_stage = 1;
 static bool pause_mode = false;
 static bool isClear = false;
 
+// 각 차량의 현재 입력 상태 (멀티 대비용)
+static CarInput g_carInputs[kCarCount];
 
 // --- 함수 구현 ---
 void GameState_Init()
@@ -37,6 +39,7 @@ void GameState_Init()
     current_stage = 1;
     pause_mode = false;
     isClear = false;
+    GameScreen = STATE_IP_INPUT;
 }
 
 void GameState_NextStage()
@@ -85,81 +88,162 @@ void GameState_NextStage()
 	}
 }
 
+// 현재 로컬(단일) 입력 상태를 CarInput 배열에 복사
+static void GameState_FillInputsFromSingleLocal()
+{
+    // car.cpp의 전역 입력 상태 읽기
+    bool  accelF = Car_IsAcceleratingForward();
+    bool  accelB = Car_IsAcceleratingBackward();
+    bool  brake = Car_IsBraking();
+    float steer = Car_GetFrontWheelRotationY();
+    GearState gear = GameState_GetCurrentGear();
+
+    // 일단은 4대 모두 같은 입력으로 채움
+    for (int i = 0; i < Car_Count(); ++i)
+    {
+        g_carInputs[i].accelForward = accelF;
+        g_carInputs[i].accelBackward = accelB;
+        g_carInputs[i].brake = brake;
+        g_carInputs[i].steering = steer;
+        g_carInputs[i].gear = gear;
+    }
+}
+
+
 void GameState_TimerLoop(int value)
 {
-    time_t currentTime = time(nullptr); // 로컬 변수로 선언
+    time_t currentTime = time(nullptr);
 
     if (!GameState_IsPaused())
     {
-        GameState_SetElapsedSeconds(static_cast<int>(currentTime - GameState_GetPauseTime() - GameState_GetStartTime()));
+        GameState_SetElapsedSeconds(
+            static_cast<int>(currentTime - GameState_GetPauseTime() - GameState_GetStartTime()));
     }
 
-    Car_UpdateSpeed(GameState_GetCurrentGear());
+    // 이번 프레임의 입력 상태를 CarInput 배열에 정리
+    GameState_FillInputsFromSingleLocal();
 
-    // 차량의 꼭짓점 계산
-    auto carCorners = Car_GetRotatedCorners();
-    // 주차 상태 업데이트
-    Environment_UpdateParkingStatus(carCorners);
+    // 1) 현재 기어 상태 가져오기
+    GearState gear = GameState_GetCurrentGear();
 
-    if (Car_GetSpeed() != 0.0f)
+    // 2) 모든 차량 속도 업데이트 (입력은 공유)
+    for (int i = 0; i < Car_Count(); ++i)
     {
-        float radians = glm::radians(Car_GetRotationY());
-        float new_dx = Car_GetDX() + Car_GetSpeed() * sin(radians);
-        float new_dz = Car_GetDZ() + Car_GetSpeed() * cos(radians);
+        const CarInput& input = GameState_GetCarInput(i);
+        Car_UpdateSpeed(input, i);
+    }
+
+    // 3) 주차 상태는 0번 차 기준으로만 체크 (카메라도 0번 기준이니까)
+    {
+        auto carCorners0 = Car_GetRotatedCorners(0);
+        Environment_UpdateParkingStatus(carCorners0);
+    }
+
+    // 4) 각 차량별 이동 + 충돌 처리
+    for (int i = 0; i < Car_Count(); ++i)
+    {
+        if (Car_GetSpeed(i) == 0.0f) continue;
+
+        float radians = glm::radians(Car_GetRotationY(i));
+        float new_dx = Car_GetDX(i) + Car_GetSpeed(i) * sin(radians);
+        float new_dz = Car_GetDZ(i) + Car_GetSpeed(i) * cos(radians);
 
         const float n = 2.0f;
-        float newAngle = Car_GetRotationY() + Car_GetFrontWheelRotationY() * n * Car_GetSpeed();
 
+        const CarInput& input = GameState_GetCarInput(i);
+        float steering = input.steering;
+
+        float newAngle =
+            Car_GetRotationY(i) + steering * n * Car_GetSpeed(i);
+
+
+        // i번 차의 "미래 위치" 꼭짓점
         auto futureCarCorners = Car_GetRotatedCorners(new_dx, new_dz, newAngle);
 
         bool isColliding = false;
+
         if (!GameState_IsInvincible())
         {
-            // 벽과의 충돌 여부 확인
-            for (int i = 0; i < 4; ++i)
+            // 1) 벽과의 충돌 검사
+            for (int w = 0; w < 4 && !isColliding; ++w)
             {
-                // 벽 데이터는 environment.h나 mesh.h의 상수를 씁니다.
-                // GROUND_SIZE, WALL_THICKNESS 사용을 위해 mesh.h 포함 필요할 수 있음 (Car_Init 등에서 이미 쓰임)
-                float wallX = (i % 2 == 0) ? 0.0f : (i == 1 ? GROUND_SIZE : -GROUND_SIZE);
-                float wallZ = (i % 2 == 1) ? 0.0f : (i == 2 ? GROUND_SIZE : -GROUND_SIZE);
-                float wallWidth = (i % 2 == 0) ? GROUND_SIZE * 2 : WALL_THICKNESS;
-                float wallHeight = (i % 2 == 1) ? GROUND_SIZE * 2 : WALL_THICKNESS;
+                float wallX = (w % 2 == 0) ? 0.0f : (w == 1 ? GROUND_SIZE : -GROUND_SIZE);
+                float wallZ = (w % 2 == 1) ? 0.0f : (w == 2 ? GROUND_SIZE : -GROUND_SIZE);
+                float wallWidth = (w % 2 == 0) ? GROUND_SIZE * 2 : WALL_THICKNESS;
+                float wallHeight = (w % 2 == 1) ? GROUND_SIZE * 2 : WALL_THICKNESS;
 
                 if (checkCollisionWalls(futureCarCorners, wallX, wallZ, wallWidth, wallHeight))
                 {
                     isColliding = true;
-                    break;
                 }
             }
 
-            if (checkCollisionObstacle(futureCarCorners))
+            // 2) 장애물과의 충돌 검사
+            if (!isColliding && checkCollisionObstacle(futureCarCorners))
             {
                 isColliding = true;
+            }
+
+            // 3) 다른 차들과의 충돌 검사
+            if (!isColliding)
+            {
+                for (int j = 0; j < Car_Count(); ++j)
+                {
+                    if (j == i) continue;
+
+                    // j번 차의 "현재 위치" 꼭짓점
+                    auto otherCarCorners = Car_GetRotatedCorners(j);
+
+                    if (checkCollisionCars(futureCarCorners, otherCarCorners))
+                    {
+                        isColliding = true;
+
+                        // 둘 다 멈추게 하고 싶으면 j번 차 속도도 0으로
+                        Car_SetSpeed(j, 0.0f);
+
+                        break;
+                    }
+                }
             }
         }
 
         if (!isColliding)
         {
-            Car_SetRotationY(newAngle);
-            Car_SetPosition(new_dx, new_dz);
-            float newWheelAngle = Car_GetWheelRotationX() + Car_GetSpeed() * 200.0f;
-            Car_SetWheelRotationX(newWheelAngle);
+            Car_SetRotationY(i, newAngle);
+            Car_SetPosition(i, new_dx, new_dz);
+
+            float newWheelAngle =
+                Car_GetWheelRotationX(i) + Car_GetSpeed(i) * 200.0f;
+            Car_SetWheelRotationX(i, newWheelAngle);
         }
         else
         {
-            GameState_SetCrushed(true);
-            Car_SetSpeed(0.0f);
+            if (i == 0)
+            {
+                GameState_SetCrushed(true);
+            }
+            Car_SetSpeed(i, 0.0f);
         }
-
-        // 핸들과 바퀴 복원 로직
-        Input_UpdateHandleReturn();
     }
 
-    // 화면 갱신 요청 및 타이머 재설정
+
+    // 핸들 복원은 한 번만
+    Input_UpdateHandleReturn();
+
     glutPostRedisplay();
-    // 재귀 호출 시 자기 자신(GameState_TimerLoop)을 호출
-    glutTimerFunc(16, GameState_TimerLoop, 1); // TIMER_VELOCITY 대신 16 직접 사용하거나 헤더에 정의
+    glutTimerFunc(16, GameState_TimerLoop, 1);
 }
+
+CarInput* GameState_GetCarInputs()
+{
+    return g_carInputs;
+}
+
+const CarInput& GameState_GetCarInput(int idx)
+{
+    return g_carInputs[idx];
+}
+
 
 // --- Getters ---
 bool GameState_IsPaused() { return pause_mode; }

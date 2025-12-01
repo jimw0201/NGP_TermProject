@@ -1,4 +1,4 @@
-#include "input_handle.h"
+ï»¿#include "input_handle.h"
 #include "game_state.h"
 #include "car.h"
 #include <iostream>
@@ -12,13 +12,13 @@ static int lastMouseX = -1, lastMouseY = -1;
 static bool is_mouse_on_camera = false;
 static bool is_mouse_on_handle = false;
 
-// ÇÚµé °ü·Ã
+// í•¸ë“¤ ê´€ë ¨
 static float handle_rotateZ = 0.0f;
 static float lastAngle = 0.0f;
 static float cumulativeAngle = 0.0f;
 static const float HANDLE_RETURN_SPEED = 3.0f;
 
-// Ä«¸Ş¶ó °ü·Ã
+// ì¹´ë©”ë¼ ê´€ë ¨
 static float c_dx = 0.0f;
 static float c_dy = 1.0f;
 static float c_dz = -3.0f;
@@ -51,7 +51,7 @@ float Input_GetHandleRotation() { return handle_rotateZ; }
 bool  Input_IsMouseOnHandle() { return is_mouse_on_handle; }
 
 
-// ÇÚµé º¹¿ø ·ÎÁ÷
+// í•¸ë“¤ ë³µì› ë¡œì§
 void Input_UpdateHandleReturn()
 {
     if (!is_mouse_on_handle)
@@ -66,18 +66,26 @@ void Input_UpdateHandleReturn()
         }
         cumulativeAngle = handle_rotateZ;
 
-        // ¹ÙÄû È¸Àü µ¿±âÈ­
+        // ë°”í€´ íšŒì „ ë™ê¸°í™”
         Car_SetFrontWheelRotationY((handle_rotateZ / 900.0f) * 30.0f);
     }
 }
 
 void Keyboard(unsigned char key, int x, int y)
 {
+    if (GameScreen == STATE_IP_INPUT) {
+        if (isdigit(key) || key == '.') {
+            SERVERIP.push_back(key);
+        }
+        else if (key == '\b' && !SERVERIP.empty()) {
+            SERVERIP.pop_back();
+        }
+    }
     if (GameState_IsClear())
     {
         if (key == 'n')
         {
-            GameState_NextStage(); // ´ÙÀ½ ½ºÅ×ÀÌÁö·Î ÀÌµ¿
+            GameState_NextStage(); // ë‹¤ìŒ ìŠ¤í…Œì´ì§€ë¡œ ì´ë™
         }
     }
     if (!GameState_IsClear())
@@ -156,13 +164,43 @@ void KeyboardUp(unsigned char key, int x, int y)
 
 void MouseButton(int button, int state, int x, int y)
 {
+    if (GameScreen == STATE_IP_INPUT &&
+        button == GLUT_LEFT_BUTTON &&
+        state == GLUT_DOWN)
+    {
+        // GLUTì˜ (x, y)ëŠ” ì¢Œìƒë‹¨ ê¸°ì¤€, ìš°ë¦¬ê°€ ê·¸ë¦° orthoëŠ” (0,0)ì´ ì•„ë˜ìª½
+        int mx = x;
+        int my = height - y; // ì¢Œí‘œê³„ ë’¤ì§‘ê¸° (í•„ìš”í•  í™•ë¥  ë§¤ìš° ë†’ìŒ)
+
+        int btnW = 200;
+        int btnH = 40;
+        int btnX = 50;
+        int btnY = (int)(height * 0.3f); // DrawIpInputUIì™€ ë™ì¼í•œ ê³„ì‚°
+
+        bool inside =
+            (mx >= btnX && mx <= btnX + btnW) &&
+            (my >= btnY && my <= btnY + btnH);
+
+        if (inside) {
+            if (!SERVERIP.empty()) {
+
+                InitializeCriticalSection(&cs);
+                CreateThread(NULL, 0, Network, NULL, 0, NULL);
+                DeleteCriticalSection(&cs);
+                GameScreen = STATE_CONNECTING;
+                glutPostRedisplay();
+                return;
+            }
+        }
+    }
+
     if (!GameState_IsPaused())
     {
         if (button == GLUT_LEFT_BUTTON)
         {
             if (state == GLUT_DOWN)
             {
-                if (x > 600 && y > 300) // ÇÚµé ¿µ¿ª
+                if (x > 600 && y > 300) // í•¸ë“¤ ì˜ì—­
                 {
                     lastAngle = 0.0f;
                     is_mouse_on_handle = true;
@@ -199,7 +237,7 @@ void MouseMotion(int x, int y)
         if (-900.0f <= handle_rotateZ && handle_rotateZ <= 900.0f)
         {
             cumulativeAngle += deltaAngle;
-            // Å¬·¥ÇÎ
+            // í´ë¨í•‘
             if (cumulativeAngle > 900.0f) cumulativeAngle = 900.0f;
             else if (cumulativeAngle < -900.0f) cumulativeAngle = -900.0f;
             handle_rotateZ = cumulativeAngle;

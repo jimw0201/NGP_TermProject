@@ -1,4 +1,3 @@
-// [ renderer.cpp ]
 #include "renderer.h"
 
 // 다른 모듈의 정보를 가져와서 그려야 하므로 모두 포함
@@ -15,9 +14,6 @@
 #include <gl/glm/ext.hpp>
 #include <gl/glm/gtc/matrix_transform.hpp>
 
-static int width = 900;
-static int height = 600;
-
 // 배경색
 static GLfloat rColor = 0.8f;
 static GLfloat gColor = 1.0f;
@@ -32,6 +28,15 @@ static GLfloat lightX = 0.0f;
 static GLfloat lightY = 5.0f;
 static GLfloat lightZ = 1.0f;
 static float light = 0.8f;
+
+
+// 플레이어별 차 몸체 색 (1P~4P)
+static const glm::vec3 g_playerBodyColors[kCarCount] = {
+	glm::vec3(1.0f, 0.0f, 0.0f),	// 1P: 빨강
+	glm::vec3(1.0f, 0.0f, 1.0f),	// 2P: 핑크
+	glm::vec3(0.55f, 0.27f, 0.07f), // 3P: 갈색
+	glm::vec3(0.0f, 0.0f, 1.0f)		// 4P: 파랑
+};
 
 // 텍스트 렌더링
 static void RenderBitmapString(float x, float y, void* font, const char* string)
@@ -214,67 +219,73 @@ static void draw_pointMode(int modelLoc, int num)
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
-static void draw_wheels(int modelLoc, int num)
+static void draw_wheels(int modelLoc, int num, int carIndex)
 {
 	int objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glUniform3f(objColorLocation, 0.25f, 0.25f, 0.25f);
 
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_on_000(num, 0)));
-	GLUquadricObj* qobj1;
-	qobj1 = gluNewQuadric();
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_on_000(num, 0, carIndex)));
+	GLUquadricObj* qobj1 = gluNewQuadric();
 	gluCylinder(qobj1, WHEEL_SIZE, WHEEL_SIZE, WHEEL_SIZE / 2, 20, 8);
 	gluDeleteQuadric(qobj1);
 
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_on_000(num, 1)));
-	GLUquadricObj* qobj2;
-	qobj2 = gluNewQuadric();
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_on_000(num, 1, carIndex)));
+	GLUquadricObj* qobj2 = gluNewQuadric();
 	gluDisk(qobj2, 0.0f, WHEEL_SIZE, 20, 8);
 	gluDeleteQuadric(qobj2);
 
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_on_000(num, 2)));
-	GLUquadricObj* qobj3;
-	qobj3 = gluNewQuadric();
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_on_000(num, 2, carIndex)));
+	GLUquadricObj* qobj3 = gluNewQuadric();
 	gluDisk(qobj3, 0.0f, WHEEL_SIZE, 20, 8);
 	gluDeleteQuadric(qobj3);
 }
 
-static void drawCar(int modelLoc, int mod)
+static void drawCar(int modelLoc, int carIndex)
 {
 	int objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
-	glUniform3f(objColorLocation, 0.0f, 0.0f, 0.9f);
+
+	// 차체
+	glm::vec3 bodyColor = g_playerBodyColors[carIndex];
+	glUniform3f(objColorLocation, bodyColor.r, bodyColor.g, bodyColor.b);
+
 	glBindVertexArray(vao[1]);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Car_Body()));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Car_Body(carIndex)));
 	glDrawArrays(GL_TRIANGLES, 0, 6 * 6);
 
+	// 유리 부분
 	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glUniform3f(objColorLocation, 0.0f, 0.9f, 0.9f);
 	glDrawArrays(GL_TRIANGLES, 36, 6 * 6);
 
+	// 헤드라이트 메쉬
 	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glUniform3f(objColorLocation, 1.0f, 1.0f, 0.8f);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Headlights(0)));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Headlights(0, carIndex)));
 	glDrawArrays(GL_TRIANGLES, 72, 6 * 6);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Headlights(1)));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Headlights(1, carIndex)));
 	glDrawArrays(GL_TRIANGLES, 108, 6 * 6);
 
-	draw_wheels(modelLoc, 1);
-	draw_wheels(modelLoc, 2);
-	draw_wheels(modelLoc, 3);
-	draw_wheels(modelLoc, 4);
+	// 바퀴(원통)
+	draw_wheels(modelLoc, 1, carIndex);
+	draw_wheels(modelLoc, 2, carIndex);
+	draw_wheels(modelLoc, 3, carIndex);
+	draw_wheels(modelLoc, 4, carIndex);
 
+	// 바퀴 박스
 	objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glUniform3f(objColorLocation, 0.5f, 0.5f, 0.5f);
 
 	glBindVertexArray(vao[4]);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_rects(1)));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_rects(1, carIndex)));
 	glDrawArrays(GL_TRIANGLES, 0, 6 * 6);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_rects(2)));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_rects(2, carIndex)));
 	glDrawArrays(GL_TRIANGLES, 36, 6 * 6);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_rects(3)));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_rects(3, carIndex)));
 	glDrawArrays(GL_TRIANGLES, 72, 6 * 6);
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_rects(4)));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Wheel_rects(4, carIndex)));
 	glDrawArrays(GL_TRIANGLES, 108, 6 * 6);
 }
+
 
 static void drawWalls(int modelLoc)
 {
@@ -304,7 +315,7 @@ static void drawFinishRect(int modelLoc)
 	for (int i = 0; i < 4; i++)
 	{
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetFinishRectMatrix(i)));
-		int currentStage = GameState_GetCurrentStage();
+
 		// 주차장 색상 지정
 		if (GameState_IsParked())
 		{
@@ -332,10 +343,6 @@ static void drawFinishRect(int modelLoc)
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
-		if (currentStage != 3) {
-			glUniform3f(objColorLocation, 0.5f, 0.5f, 0.5f);
-			glDrawArrays(GL_TRIANGLES, 6, 6); 
-		}
 		glUniform3f(objColorLocation, 0.5f, 0.5f, 0.5f);
 		glDrawArrays(GL_TRIANGLES, 6, 6);
 	}
@@ -371,8 +378,10 @@ static void drawObstacleCars(int modelLoc)
 			}
 		}
 	}
+
 	int objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glBindVertexArray(vao[9]); // 큐브 모델 바인딩
+
 
 	// 3라운드 : 긴 벽 2개 그리기
 	if (currentStage == 3)
@@ -405,397 +414,566 @@ static void drawObstacleCars(int modelLoc)
 	}
 }
 
-
-
 static void drawCarCorners(int modelLoc)
 {
 	int objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor");
 	glUniform3f(objColorLocation, 1.0f, 0.0f, 0.0f);
 
-	auto carCorners = Car_GetRotatedCorners();
-	for (const auto& corner : carCorners)
+	for (int i = 0; i < Car_Count(); ++i)
 	{
-		float cornerX = corner.first;
-		float cornerZ = corner.second;
+		auto carCorners = Car_GetRotatedCorners(i);
+		for (const auto& corner : carCorners)
+		{
+			float cornerX = corner.first;
+			float cornerZ = corner.second;
 
-		glm::mat4 T = glm::mat4(1.0f);
-		T = glm::translate(T, glm::vec3(cornerX, CAR_SIZE * 0.75, cornerZ));
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(T));
-		GLUquadricObj* qobj1;
-		qobj1 = gluNewQuadric();
-		gluSphere(qobj1, WHEEL_SIZE / 3, 10, 10);
-		gluDeleteQuadric(qobj1);
+			glm::mat4 T = glm::mat4(1.0f);
+			T = glm::translate(T, glm::vec3(cornerX, CAR_SIZE * 0.75, cornerZ));
+			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(T));
+
+			GLUquadricObj* qobj1 = gluNewQuadric();
+			gluSphere(qobj1, WHEEL_SIZE / 3, 10, 10);
+			gluDeleteQuadric(qobj1);
+		}
 	}
 }
+
+static int BitmapStringWidth(void* font, const std::string& s) { // 지금까지 찍힌 문자열이 차지하는 가로 픽셀 길이 구함
+	int w = 0;
+	for (unsigned char c : s) {
+		w += glutBitmapWidth(font, c);
+	}
+	return w;
+}
+
+void DrawIpInputUI(int miniWidth, int miniHeight)
+{
+	glUseProgram(0);
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	gluOrtho2D(0, miniWidth, 0, miniHeight); // (0,0)~(w,h) 2D 좌표
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+	
+	// 입력 박스
+	int boxX = 50, boxY = (int)(miniHeight * 0.5f);
+	int boxW = 320, boxH = 40;
+
+	// --- 텍스트: 안내 + IP 입력 값 ---
+	glColor3f(0.0f, 0.0f, 0.0f);
+	std::string title = "Server IP : ";
+	std::string ipStr = SERVERIP;  // 사용자가 입력 중인 값
+
+	glPushMatrix();
+	glTranslatef(50, miniHeight * 0.6f, 0.0f);
+	RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, title.c_str());
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef((float)boxX + 10, (float)boxY+12, 0.0f);
+	RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, ipStr.c_str());
+	glPopMatrix();
+
+	
+	// 입력 배경
+	glColor3f(1.0f, 1.0f, 1.0f);
+	glBegin(GL_QUADS);
+	glVertex2f(boxX, boxY);
+	glVertex2f(boxX + boxW, boxY);
+	glVertex2f(boxX + boxW, boxY + boxH);
+	glVertex2f(boxX, boxY + boxH);
+	glEnd();
+
+	// 입력 칸 테두리
+	glColor3f(0.0, 0.0, 0.0);
+	glBegin(GL_LINE_LOOP);
+	glVertex2f(boxX, boxY);
+	glVertex2f(boxX + boxW, boxY);
+	glVertex2f(boxX + boxW, boxY + boxH);
+	glVertex2f(boxX, boxY + boxH);
+	glEnd();
+
+	// 커서 깜빡임
+	glPushMatrix(); 
+	glTranslatef((float)boxX + 10, (float)boxY+12, 0.0f);
+	RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, ipStr.c_str()); 
+	int t = glutGet(GLUT_ELAPSED_TIME); // 경과 시간
+	if ((t / 500) % 2 == 0) {  // 0.5초마다 커서 깜빡임
+		int tw = BitmapStringWidth(GLUT_BITMAP_HELVETICA_18, ipStr); 
+		glRasterPos2f((float)tw + 2, 0);  // 비트 맵 글자를 찍을 시작 위치(커서 위치) 옮기기
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, '|'); }  // | 하나 찍기
+	glPopMatrix();
+
+	// --- connect 버튼 그리기 ---
+	int btnH = 40;
+	int btnX = 50;
+	int btnY = (int)(miniHeight * 0.3f);
+	int btnW = 200;
+
+	// 버튼 배경
+	glColor3f(1.0f, 1.0f, 1.0f);
+	glBegin(GL_QUADS);
+	glVertex2f(btnX, btnY);
+	glVertex2f(btnX + btnW, btnY);
+	glVertex2f(btnX + btnW, btnY + btnH);
+	glVertex2f(btnX, btnY + btnH);
+	glEnd();
+
+	// 버튼 테두리
+	glColor3f(0.0f, 0.0f, 0.0f);
+	glBegin(GL_LINE_LOOP);
+	glVertex2f(btnX, btnY);
+	glVertex2f(btnX + btnW, btnY);
+	glVertex2f(btnX + btnW, btnY + btnH);
+	glVertex2f(btnX, btnY + btnH);
+	glEnd();
+
+	// 버튼 텍스트
+	glPushMatrix();
+	glTranslatef(btnX + 60, btnY + 12, 0.0f); // 이동
+	RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, "Connect");
+	glPopMatrix();
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+
+	glUseProgram(shaderProgramID);
+}
+
+
+void DrawConnectingUI(int miniWidth, int miniHeight)
+{
+	glUseProgram(0);
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	gluOrtho2D(0, miniWidth, 0, miniHeight);
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	glColor3f(0.0f, 0.0f, 0.0f);
+	std::string msg = "Connecting to server";
+
+	glPushMatrix();
+	glTranslatef(50, miniHeight * 0.5f, 0.0f);
+	RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, msg.c_str());
+	glPopMatrix();
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+
+	glUseProgram(shaderProgramID);
+}
+
+
 
 // 메인 그리기 함수
 void drawScene()
 {
+	// 윈도우 크기 얻기
+	int width = glutGet(GLUT_WINDOW_WIDTH);
+	int height = glutGet(GLUT_WINDOW_HEIGHT);
+	// 뷰포트 설정
 	glViewport(0, 0, width, height);
 
-	glClearColor(rColor, gColor, bColor, 1.0f);
+	if (GameScreen == STATE_IP_INPUT | GameScreen == STATE_CONNECTING) {
+		glClearColor(0.85f, 0.85f, 0.85f, 1.0f); // 어두운 회색
+	}
+	else {
+		glClearColor(rColor, gColor, bColor, 1.0f);
+	}
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glUseProgram(shaderProgramID);
-
-	int modelLoc = glGetUniformLocation(shaderProgramID, "modelTransform");
-	int viewLoc = glGetUniformLocation(shaderProgramID, "viewTransform");
-	int projLoc = glGetUniformLocation(shaderProgramID, "projectionTransform");
-
-	// 3인칭 뷰
-	if (GameState_GetCurrentGear() != REVERSE)
+	if (GameScreen == STATE_IP_INPUT)
 	{
+		glDisable(GL_DEPTH_TEST); // UI 그릴 땐 깊이 테스트 끄기
+		DrawIpInputUI(width, height);
+		glEnable(GL_DEPTH_TEST);
+		glutSwapBuffers();
+		return;   // 아래의 게임 렌더링 코드는 실행 안 함
+	}
+
+	else if (GameScreen == STATE_CONNECTING)
+	{
+		glDisable(GL_DEPTH_TEST); // UI 그릴 땐 깊이 테스트 끄기
+		DrawConnectingUI(width, height);
+		glEnable(GL_DEPTH_TEST);
+		glutSwapBuffers();
+		return;
+	}
+	else if (GameScreen == STATE_GAME_PLAY) {
+		glEnable(GL_DEPTH_TEST); // 게임 그릴 땐 켜기
+		glUseProgram(shaderProgramID);
+
+		int modelLoc = glGetUniformLocation(shaderProgramID, "modelTransform");
+		int viewLoc = glGetUniformLocation(shaderProgramID, "viewTransform");
+		int projLoc = glGetUniformLocation(shaderProgramID, "projectionTransform");
+
+		// 3인칭 뷰
+		{
+			if (true)
+			{
+				if (isCull)
+				{
+					glDisable(GL_DEPTH_TEST);
+				}
+				else
+				{
+					glEnable(GL_DEPTH_TEST);
+				}
+
+				// 차체 중심을 공전 중심으로 설정
+				glm::vec3 orbitCenter = glm::vec3(Car_GetDX(), Car_GetDY(), Car_GetDZ());
+
+				// 카메라 위치 계산
+				float cameraDistance = Input_GetCameraDZ();
+				glm::vec3 cameraDirection = glm::vec3(0.0f, 0.0f, -1.0f);
+				glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+				glm::mat4 cameraRotateMat = glm::rotate(glm::mat4(1.0f), glm::radians(Input_GetCameraRotateY()), glm::vec3(0.0, 1.0, 0.0));
+				glm::vec3 cameraOffset = glm::vec3(cameraRotateMat * glm::vec4(0.0f, 1.9f, cameraDistance, 1.0f)); // Y축으로 살짝 올림
+				glm::vec3 cameraPos = orbitCenter + cameraOffset;
+
+				// 카메라 방향 업데이트 (살짝 아래로 보기)
+				glm::vec3 lookTarget = orbitCenter + glm::vec3(0.0f, -0.2f, 0.0f); // 아래로 약간 이동
+				cameraDirection = glm::normalize(lookTarget - cameraPos);
+
+				// 뷰 행렬 설정
+				glm::mat4 vTransform = glm::lookAt(cameraPos, lookTarget, cameraUp);
+				glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &vTransform[0][0]);
+
+				unsigned int viewPosLocation = glGetUniformLocation(shaderProgramID, "viewPos");
+				glUniform3f(viewPosLocation, cameraPos.x, cameraPos.y, cameraPos.z);
+
+				// 투영변환
+				glm::mat4 pTransform = glm::mat4(1.0f);
+				if (!isProspect)
+				{
+					pTransform = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -0.1f, 100.0f);
+				}
+				else
+				{
+					pTransform = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 50.0f);
+				}
+				glUniformMatrix4fv(projLoc, 1, GL_FALSE, &pTransform[0][0]);
+			}
+
+			// 헤드라이트
+			headLight(modelLoc);
+
+			// 조명 설정
+			illuminate(modelLoc);
+
+			// 바닥 그리기
+			drawGround(modelLoc);
+
+			// 모델 그리기
+			for (int i = 0; i < Car_Count(); ++i)
+			{
+				drawCar(modelLoc, i);
+			}
+
+			// 장애물 차 그리기
+			drawObstacleCars(modelLoc);
+
+			// 벽 그리기
+			drawWalls(modelLoc);
+
+			// 도착지점 그리기
+			drawFinishRect(modelLoc);
+
+			// 차 꼭지점 (좌표에 따라) 그리기 (디버깅, 무적)
+			if (GameState_IsInvincible())
+			{
+				drawCarCorners(modelLoc);
+			}
+		}
+		// 후방 카메라 뷰
+		if (GameState_GetCurrentGear() == REVERSE)
+		{
+			// 후방 카메라 뷰포트 설정
+			int rearViewWidth = width / 3;
+			int rearViewHeight = height / 4;
+			int rearViewX = (width - rearViewWidth) / 2; // 화면 중앙 상단
+			int rearViewY = height - rearViewHeight - 10;
+
+			glViewport(rearViewX, rearViewY, rearViewWidth, rearViewHeight);
+
+			// 후방 카메라 뷰 행렬 설정
+			glm::mat4 rearViewTransform = RearCameraView();
+			glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(rearViewTransform));
+
+			// 동일한 투영 행렬 사용
+			glm::mat4 rearProjTransform = glm::perspective(glm::radians(45.0f), (float)rearViewWidth / (float)rearViewHeight, 0.1f, 50.0f);
+			glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(rearProjTransform));
+
+			// 자동차, 바닥, 벽 등 모든 객체를 다시 그리기
+			drawGround(modelLoc);
+			for (int i = 0; i < Car_Count(); ++i)
+			{
+				drawCar(modelLoc, i);
+			}
+			drawObstacleCars(modelLoc);
+			drawWalls(modelLoc);
+			drawFinishRect(modelLoc);
+		}
+		glDisable(GL_DEPTH_TEST);
+		// 핸들 - 뷰포트 설정으로 그리기
 		if (true)
 		{
-			if (isCull)
-			{
-				glDisable(GL_DEPTH_TEST);
-			}
-			else
-			{
-				glEnable(GL_DEPTH_TEST);
-			}
+			int miniMapWidth = 900 / 3;
+			int miniMapHeight = 900 / 3;
+			int miniMapX = 900 - miniMapWidth;
+			int miniMapY = 900 - miniMapHeight;
+			glViewport(miniMapX, 0, miniMapWidth, miniMapHeight);
 
-			// 차체 중심을 공전 중심으로 설정
-			glm::vec3 orbitCenter = glm::vec3(Car_GetDX(), Car_GetDY(), Car_GetDZ());
+			// 정면 뷰용 카메라 설정
+			glm::mat4 topViewTransform = glm::lookAt(
+				glm::vec3(0.0f, 0.0f, 1.0f),	// 카메라 위치
+				glm::vec3(0.0f, 0.0f, 0.0f),	// 어디를 바라볼 것인가
+				glm::vec3(0.0f, 1.0f, 0.0f)		// 업 벡터
+			);
+			glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &topViewTransform[0][0]);
 
-			// 카메라 위치 계산
-			float cameraDistance = Input_GetCameraDZ();
-			glm::vec3 cameraDirection = glm::vec3(0.0f, 0.0f, -1.0f);
-			glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+			// 투영 변환 (직교 투영)
+			glm::mat4 orthoTransform = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -0.1f, 1.5f);
+			glUniformMatrix4fv(projLoc, 1, GL_FALSE, &orthoTransform[0][0]);
 
-			glm::mat4 cameraRotateMat = glm::rotate(glm::mat4(1.0f), glm::radians(Input_GetCameraRotateY()), glm::vec3(0.0, 1.0, 0.0));
-			glm::vec3 cameraOffset = glm::vec3(cameraRotateMat * glm::vec4(0.0f, 1.9f, cameraDistance, 1.0f)); // Y축으로 살짝 올림
-			glm::vec3 cameraPos = orbitCenter + cameraOffset;
-
-			// 카메라 방향 업데이트 (살짝 아래로 보기)
-			glm::vec3 lookTarget = orbitCenter + glm::vec3(0.0f, -0.2f, 0.0f); // 아래로 약간 이동
-			cameraDirection = glm::normalize(lookTarget - cameraPos);
-
-			// 뷰 행렬 설정
-			glm::mat4 vTransform = glm::lookAt(cameraPos, lookTarget, cameraUp);
-			glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &vTransform[0][0]);
-
-			unsigned int viewPosLocation = glGetUniformLocation(shaderProgramID, "viewPos");
-			glUniform3f(viewPosLocation, cameraPos.x, cameraPos.y, cameraPos.z);
-
-			// 투영변환
-			glm::mat4 pTransform = glm::mat4(1.0f);
-			if (!isProspect)
-			{
-				pTransform = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -0.1f, 100.0f);
-			}
-			else
-			{
-				pTransform = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 50.0f);
-			}
-			glUniformMatrix4fv(projLoc, 1, GL_FALSE, &pTransform[0][0]);
+			// 핸들 그리기
+			draw_handle(modelLoc, 0);
 		}
-
-		// 헤드라이트
-		headLight(modelLoc);
-
-		// 조명 설정
-		illuminate(modelLoc);
-
-		// 바닥 그리기
-		drawGround(modelLoc);
-
-		// 모델 그리기
-		drawCar(modelLoc, 0);
-
-		// 장애물 차 그리기
-		drawObstacleCars(modelLoc);
-
-		// 벽 그리기
-		drawWalls(modelLoc);
-
-		// 도착지점 그리기
-		drawFinishRect(modelLoc);
-
-		// 차 꼭지점 (좌표에 따라) 그리기 (디버깅, 무적)
-		if (GameState_IsInvincible())
+		// 기어 그리기
+		if (true)
 		{
-			drawCarCorners(modelLoc);
-		}
-	}
-	// 후방 카메라 뷰
-	if (GameState_GetCurrentGear() == REVERSE)
-	{
-		// 후방 카메라 뷰포트 설정
-		//int rearViewWidth = clientWidth / 3;
-		//int rearViewHeight = clientHeight / 3;
-		//int rearViewX = (clientWidth - rearViewWidth) / 2; // 화면 중앙 상단
-		//int rearViewY = clientHeight - rearViewHeight;
+			int miniMapWidth = width / 3;
+			int miniMapHeight = height / 3;
+			int miniMapX = width - miniMapWidth;
+			int miniMapY = height - miniMapHeight;
+			glViewport(miniMapX, miniMapY, miniMapWidth, miniMapHeight);
 
-		int rearViewWidth = width;
-		int rearViewHeight = height;
-		int rearViewX = 0;// 화면 중앙 상단
-		int rearViewY = 0;
+			glm::mat4 topViewTransform = glm::lookAt(
+				glm::vec3(0.0f, 0.0f, 1.0f), // 카메라 위치
+				glm::vec3(0.0f, 0.0f, 0.0f), // 바라보는 위치
+				glm::vec3(0.0f, 1.0f, 0.0f)  // 업 벡터
+			);
+			glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(topViewTransform));
 
-		glViewport(rearViewX, rearViewY, rearViewWidth, rearViewHeight);
+			glm::mat4 orthoTransform = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -0.1f, 1.5f);
+			glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(orthoTransform));
 
-		// 후방 카메라 뷰 행렬 설정
-		glm::mat4 rearViewTransform = RearCameraView();
-		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(rearViewTransform));
+			draw_gear(modelLoc, 0);
 
-		// 동일한 투영 행렬 사용
-		glm::mat4 rearProjTransform = glm::perspective(glm::radians(45.0f), (float)rearViewWidth / (float)rearViewHeight, 0.1f, 50.0f);
-		glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(rearProjTransform));
-
-		// 자동차, 바닥, 벽 등 모든 객체를 다시 그리기
-		drawGround(modelLoc);
-		drawCar(modelLoc, 0);
-		drawObstacleCars(modelLoc);
-		drawWalls(modelLoc);
-		drawFinishRect(modelLoc);
-	}
-	glDisable(GL_DEPTH_TEST);
-	// 핸들 - 뷰포트 설정으로 그리기
-	if (true)
-	{
-		int miniMapWidth = 900 / 3;
-		int miniMapHeight = 900 / 3;
-		int miniMapX = 900 - miniMapWidth;
-		int miniMapY = 900 - miniMapHeight;
-		glViewport(miniMapX, 0, miniMapWidth, miniMapHeight);
-
-		// 정면 뷰용 카메라 설정
-		glm::mat4 topViewTransform = glm::lookAt(
-			glm::vec3(0.0f, 0.0f, 1.0f),	// 카메라 위치
-			glm::vec3(0.0f, 0.0f, 0.0f),	// 어디를 바라볼 것인가
-			glm::vec3(0.0f, 1.0f, 0.0f)		// 업 벡터
-		);
-		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &topViewTransform[0][0]);
-
-		// 투영 변환 (직교 투영)
-		glm::mat4 orthoTransform = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -0.1f, 1.5f);
-		glUniformMatrix4fv(projLoc, 1, GL_FALSE, &orthoTransform[0][0]);
-
-		// 핸들 그리기
-		draw_handle(modelLoc, 0);
-	}
-	// 기어 그리기
-	if (true)
-	{
-		int miniMapWidth = width / 3;
-		int miniMapHeight = height / 3;
-		int miniMapX = width - miniMapWidth;
-		int miniMapY = height - miniMapHeight;
-		glViewport(miniMapX, miniMapY, miniMapWidth, miniMapHeight);
-
-		glm::mat4 topViewTransform = glm::lookAt(
-			glm::vec3(0.0f, 0.0f, 1.0f), // 카메라 위치
-			glm::vec3(0.0f, 0.0f, 0.0f), // 바라보는 위치
-			glm::vec3(0.0f, 1.0f, 0.0f)  // 업 벡터
-		);
-		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(topViewTransform));
-
-		glm::mat4 orthoTransform = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -0.1f, 1.5f);
-		glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(orthoTransform));
-
-		draw_gear(modelLoc, 0);
-
-		// 텍스트 그리기
-		glUseProgram(0);
-		glMatrixMode(GL_PROJECTION);
-		glPushMatrix();
-		glLoadIdentity();
-		gluOrtho2D(0, miniMapWidth, 0, miniMapHeight);
-
-		glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		glLoadIdentity();
-
-		// 텍스트 위치 계산 (픽셀 단위)
-		float textScale = 1.0f; // 텍스트 크기 조절
-		float p_x = miniMapWidth * 0.65f;
-		float r_x = miniMapWidth * 0.65f;
-		float n_x = miniMapWidth * 0.65f;
-		float d_x = miniMapWidth * 0.65f;
-		float y = miniMapHeight * 0.5f;
-
-		int star_count = 1;
-		if (GameState_GetElapsedSeconds() < 30)
-			glColor3f(1.0f, 1.0f, 1.0f); // 흰색
-		else if (GameState_GetElapsedSeconds() < 60)
-			glColor3f(1.0f, 1.0f, 0.0f); // 노란색
-		else if (GameState_GetElapsedSeconds() >= 60)
-			glColor3f(1.0f, 0.0f, 0.0f); // 빨간색
-		std::string timeString = std::to_string(GameState_GetElapsedSeconds()) + "s";
-
-		glPushMatrix();
-		glTranslatef(p_x + 25, y + 84, 0.0f);
-		glScalef(textScale, textScale, textScale);
-		RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, timeString.c_str());
-		glPopMatrix();
-
-		glColor3f(1.0f, 1.0f, 1.0f); // 흰색
-		glPushMatrix();
-		glTranslatef(p_x, y + 50, 0.0f);
-		glScalef(textScale, textScale, textScale);
-		RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, "P");
-		glPopMatrix();
-
-		glPushMatrix();
-		glTranslatef(r_x, y + 5, 0.0f);
-		glScalef(textScale, textScale, textScale);
-		RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, "R");
-		glPopMatrix();
-
-		glPushMatrix();
-		glTranslatef(n_x, y - 40, 0.0f);
-		glScalef(textScale, textScale, textScale);
-		RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, "N");
-		glPopMatrix();
-
-		glPushMatrix();
-		glTranslatef(d_x, y - 80, 0.0f);
-		glScalef(textScale, textScale, textScale);
-		RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, "D");
-		glPopMatrix();
-
-		glPopMatrix();
-		glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
-
-		glMatrixMode(GL_MODELVIEW);
-		glUseProgram(shaderProgramID);
-	}
-	// 기어 스틱 그리기
-	if (true)
-	{
-		int miniMapWidth = width / 3;
-		int miniMapHeight = height / 3;
-		int miniMapX = width - miniMapWidth;
-		int miniMapY = height - miniMapHeight;
-		glViewport(miniMapX, miniMapY, miniMapWidth, miniMapHeight);
-
-		glm::mat4 topViewTransform = glm::lookAt(
-			glm::vec3(0.0f, 0.0f, 1.0f), // 카메라 위치
-			glm::vec3(0.0f, 0.0f, 0.0f), // 바라보는 위치
-			glm::vec3(0.0f, 1.0f, 0.0f)  // 업 벡터
-		);
-		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(topViewTransform));
-
-		glm::mat4 orthoTransform = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -0.1f, 1.5f);
-		glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(orthoTransform));
-
-		draw_gear_stick(modelLoc, 0);
-	}
-	glEnable(GL_DEPTH_TEST);
-
-	if (GameState_IsPaused())
-	{
-		int miniMapWidth = width / 2;
-		int miniMapHeight = height / 2;
-		int miniMapX = width - miniMapWidth * 3 / 2;
-		int miniMapY = height - miniMapHeight * 3 / 2;
-		glViewport(miniMapX, miniMapY, miniMapWidth, miniMapHeight);
-
-		glm::mat4 topViewTransform = glm::lookAt(
-			glm::vec3(0.0f, 0.0f, 1.0f), // 카메라 위치
-			glm::vec3(0.0f, 0.0f, 0.0f), // 바라보는 위치
-			glm::vec3(0.0f, 1.0f, 0.0f)  // 업 벡터
-		);
-		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(topViewTransform));
-
-		glm::mat4 orthoTransform = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -0.1f, 1.5f);
-		glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(orthoTransform));
-
-		draw_pointMode(modelLoc, 0);
-
-		// 텍스트 그리기
-		glUseProgram(0);
-		glMatrixMode(GL_PROJECTION);
-		glPushMatrix();
-		glLoadIdentity();
-		gluOrtho2D(0, miniMapWidth, 0, miniMapHeight);
-
-		glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		glLoadIdentity();
-
-		// 텍스트 위치 계산 (픽셀 단위)
-		float textScale = 1.0f; // 텍스트 크기 조절
-		float mx = miniMapWidth * 0.5f;
-		float my = miniMapHeight * 0.5f;
-
-		if (!GameState_IsClear()) // 정지 모드
-		{
-			glColor3f(1.0f, 1.0f, 1.0f); // 흰색
-			std::string String = "PAUSE";
+			// 텍스트 그리기
+			glUseProgram(0);
+			glMatrixMode(GL_PROJECTION);
 			glPushMatrix();
-			glTranslatef(mx - 20, my + 50, 0.0f);
-			glScalef(textScale, textScale, textScale);
-			RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, String.c_str());
-			glPopMatrix();
+			glLoadIdentity();
+			gluOrtho2D(0, miniMapWidth, 0, miniMapHeight);
 
-			String = "Press 'ESC' to resume";
+			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
-			glTranslatef(mx - 80, my - 50, 0.0f);
-			glScalef(textScale, textScale, textScale);
-			RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, String.c_str());
-			glPopMatrix();
-		}
-		else // 클리어 표시
-		{
-			glColor3f(1.0f, 1.0f, 1.0f); // 흰색
-			std::string String = "stage " + std::to_string(GameState_GetCurrentStage()) + " clear!!";
+			glLoadIdentity();
 
-			glPushMatrix();
-			glTranslatef(mx - 50, my + 50, 0.0f);
-			glScalef(textScale, textScale, textScale);
-			RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, String.c_str());
-			glPopMatrix();
+			// 텍스트 위치 계산 (픽셀 단위)
+			float textScale = 1.0f; // 텍스트 크기 조절
+			float p_x = miniMapWidth * 0.65f;
+			float r_x = miniMapWidth * 0.65f;
+			float n_x = miniMapWidth * 0.65f;
+			float d_x = miniMapWidth * 0.65f;
+			float y = miniMapHeight * 0.5f;
 
-			glColor3f(1.0f, 1.0f, 0.0f); // 노란색
 			int star_count = 1;
-			if (GameState_GetElapsedSeconds() <= 60)
-			{
-				star_count++;
-			}
-			if (!GameState_IsCrushed())
-			{
-				star_count++;
-			}
+			if (GameState_GetElapsedSeconds() < 30)
+				glColor3f(1.0f, 1.0f, 1.0f); // 흰색
+			else if (GameState_GetElapsedSeconds() < 60)
+				glColor3f(1.0f, 1.0f, 0.0f); // 노란색
+			else if (GameState_GetElapsedSeconds() >= 60)
+				glColor3f(1.0f, 0.0f, 0.0f); // 빨간색
+			std::string timeString = std::to_string(GameState_GetElapsedSeconds()) + "s";
 
-			String = "your star count : " + std::to_string(star_count);
 			glPushMatrix();
-			glTranslatef(mx - 65, my, 0.0f);
+			glTranslatef(p_x + 25, y + 84, 0.0f);
 			glScalef(textScale, textScale, textScale);
-			RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, String.c_str());
+			RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, timeString.c_str());
 			glPopMatrix();
 
 			glColor3f(1.0f, 1.0f, 1.0f); // 흰색
-			if (GameState_GetCurrentStage() <= 2)
-			{
-				String = "Press 'n' to next stage";
-				glPushMatrix();
-				glTranslatef(mx - 80, my - 50, 0.0f);
-				glScalef(textScale, textScale, textScale);
-				RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, String.c_str());
-				glPopMatrix();
-			}
-			else
-			{
-				String = "Press 'n' to quit game";
-				glPushMatrix();
-				glTranslatef(mx - 80, my - 50, 0.0f);
-				glScalef(textScale, textScale, textScale);
-				RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, String.c_str());
-				glPopMatrix();
-			}
+			glPushMatrix();
+			glTranslatef(p_x, y + 50, 0.0f);
+			glScalef(textScale, textScale, textScale);
+			RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, "P");
+			glPopMatrix();
+
+			glPushMatrix();
+			glTranslatef(r_x, y + 5, 0.0f);
+			glScalef(textScale, textScale, textScale);
+			RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, "R");
+			glPopMatrix();
+
+			glPushMatrix();
+			glTranslatef(n_x, y - 40, 0.0f);
+			glScalef(textScale, textScale, textScale);
+			RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, "N");
+			glPopMatrix();
+
+			glPushMatrix();
+			glTranslatef(d_x, y - 80, 0.0f);
+			glScalef(textScale, textScale, textScale);
+			RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, "D");
+			glPopMatrix();
+
+			glPopMatrix();
+			glMatrixMode(GL_PROJECTION);
+			glPopMatrix();
+
+			glMatrixMode(GL_MODELVIEW);
+			glUseProgram(shaderProgramID);
 		}
+		// 기어 스틱 그리기
+		if (true)
+		{
+			int miniMapWidth = width / 3;
+			int miniMapHeight = height / 3;
+			int miniMapX = width - miniMapWidth;
+			int miniMapY = height - miniMapHeight;
+			glViewport(miniMapX, miniMapY, miniMapWidth, miniMapHeight);
 
-		glPopMatrix();
-		glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
+			glm::mat4 topViewTransform = glm::lookAt(
+				glm::vec3(0.0f, 0.0f, 1.0f), // 카메라 위치
+				glm::vec3(0.0f, 0.0f, 0.0f), // 바라보는 위치
+				glm::vec3(0.0f, 1.0f, 0.0f)  // 업 벡터
+			);
+			glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(topViewTransform));
 
-		glMatrixMode(GL_MODELVIEW);
-		glUseProgram(shaderProgramID);
+			glm::mat4 orthoTransform = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -0.1f, 1.5f);
+			glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(orthoTransform));
+
+			draw_gear_stick(modelLoc, 0);
+		}
+		glEnable(GL_DEPTH_TEST);
+
+		if (GameState_IsPaused())
+		{
+			int miniMapWidth = width / 2;
+			int miniMapHeight = height / 2;
+			int miniMapX = width - miniMapWidth * 3 / 2;
+			int miniMapY = height - miniMapHeight * 3 / 2;
+			glViewport(miniMapX, miniMapY, miniMapWidth, miniMapHeight);
+
+			glm::mat4 topViewTransform = glm::lookAt(
+				glm::vec3(0.0f, 0.0f, 1.0f), // 카메라 위치
+				glm::vec3(0.0f, 0.0f, 0.0f), // 바라보는 위치
+				glm::vec3(0.0f, 1.0f, 0.0f)  // 업 벡터
+			);
+			glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(topViewTransform));
+
+			glm::mat4 orthoTransform = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -0.1f, 1.5f);
+			glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(orthoTransform));
+
+			draw_pointMode(modelLoc, 0);
+
+			// 텍스트 그리기
+			glUseProgram(0);
+			glMatrixMode(GL_PROJECTION);
+			glPushMatrix();
+			glLoadIdentity();
+			gluOrtho2D(0, miniMapWidth, 0, miniMapHeight);
+
+			glMatrixMode(GL_MODELVIEW);
+			glPushMatrix();
+			glLoadIdentity();
+
+			// 텍스트 위치 계산 (픽셀 단위)
+			float textScale = 1.0f; // 텍스트 크기 조절
+			float mx = miniMapWidth * 0.5f;
+			float my = miniMapHeight * 0.5f;
+
+			if (!GameState_IsClear()) // 정지 모드
+			{
+				glColor3f(1.0f, 1.0f, 1.0f); // 흰색
+				std::string String = "PAUSE";
+				glPushMatrix();
+				glTranslatef(mx - 20, my + 50, 0.0f);
+				glScalef(textScale, textScale, textScale);
+				RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, String.c_str());
+				glPopMatrix();
+
+				String = "Press 'ESC' to resume";
+				glPushMatrix();
+				glTranslatef(mx - 80, my - 50, 0.0f);
+				glScalef(textScale, textScale, textScale);
+				RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, String.c_str());
+				glPopMatrix();
+			}
+			else // 클리어 표시
+			{
+				glColor3f(1.0f, 1.0f, 1.0f); // 흰색
+				std::string String = "stage " + std::to_string(GameState_GetCurrentStage()) + " clear!!";
+
+				glPushMatrix();
+				glTranslatef(mx - 50, my + 50, 0.0f);
+				glScalef(textScale, textScale, textScale);
+				RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, String.c_str());
+				glPopMatrix();
+
+				glColor3f(1.0f, 1.0f, 0.0f); // 노란색
+				int star_count = 1;
+				if (GameState_GetElapsedSeconds() <= 60)
+				{
+					star_count++;
+				}
+				if (!GameState_IsCrushed())
+				{
+					star_count++;
+				}
+
+				String = "your star count : " + std::to_string(star_count);
+				glPushMatrix();
+				glTranslatef(mx - 65, my, 0.0f);
+				glScalef(textScale, textScale, textScale);
+				RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, String.c_str());
+				glPopMatrix();
+
+				glColor3f(1.0f, 1.0f, 1.0f); // 흰색
+				if (GameState_GetCurrentStage() <= 2)
+				{
+					String = "Press 'n' to next stage";
+					glPushMatrix();
+					glTranslatef(mx - 80, my - 50, 0.0f);
+					glScalef(textScale, textScale, textScale);
+					RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, String.c_str());
+					glPopMatrix();
+				}
+				else
+				{
+					String = "Press 'n' to quit game";
+					glPushMatrix();
+					glTranslatef(mx - 80, my - 50, 0.0f);
+					glScalef(textScale, textScale, textScale);
+					RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, String.c_str());
+					glPopMatrix();
+				}
+			}
+
+			glPopMatrix();
+			glMatrixMode(GL_PROJECTION);
+			glPopMatrix();
+
+			glMatrixMode(GL_MODELVIEW);
+			glUseProgram(shaderProgramID);
+		}
 	}
-
 	glutSwapBuffers();
 }
 

@@ -40,9 +40,6 @@
     <Filter Include="헤더 파일\System">
       <UniqueIdentifier>{8a200751-444c-441b-a3fd-15ccd817cfd6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="헤더 파일\network">
-      <UniqueIdentifier>{a92243c6-23f4-4e5e-abdd-0bcdddb4fa0e}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -71,6 +68,9 @@
     </ClCompile>
     <ClCompile Include="input_handle.cpp">
       <Filter>소스 파일\System</Filter>
+    </ClCompile>
+    <ClCompile Include="err.cpp">
+      <Filter>소스 파일\Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -107,10 +107,7 @@
       <Filter>헤더 파일\System</Filter>
     </ClInclude>
     <ClInclude Include="protocol.h">
-      <Filter>헤더 파일\network</Filter>
-    </ClInclude>
-    <ClInclude Include="sharedGameData.h">
-      <Filter>헤더 파일\network</Filter>
+      <Filter>헤더 파일\Core</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

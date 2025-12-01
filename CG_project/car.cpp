@@ -1,13 +1,11 @@
 #include "car.h"
 #include "mesh.h"
 
-static float car_dx, car_dy, car_dz;
-static float car_rotateY;
+// 차량 상태(위치, 회전, 속도 등)
+static CarState g_cars[kCarCount];
 
+// 입력 상태: 일단 4대가 같이 쓰게 함
 static float front_wheels_rotateY;
-static float wheel_rect_rotateX;
-
-static float car_speed;
 static bool isAcceleratingForward;
 static bool isAcceleratingBackward;
 static bool isBraking;
@@ -17,92 +15,145 @@ static const float acceleration = 0.001f;
 static const float deceleration = 0.005f;
 static const float friction = 0.0001f;
 
-void Car_UpdateSpeed(GearState currentGear)
+void Car_InitForStage(int stage);
+
+void Car_UpdateSpeed(const CarInput& input, int carIndex)
 {
+	float& speed = g_cars[carIndex].speed;
+	GearState currentGear = input.gear;
+
+	// PARK / NEUTRAL 은 가속 불가
 	if (currentGear == PARK || currentGear == NEUTRAL)
 	{
-		car_speed = 0.0f; // 정지
+		speed = 0.0f;
+		return;
 	}
 
-	// 후진 처리
-	if (currentGear == REVERSE && isAcceleratingBackward)
+	// 후진
+	if (currentGear == REVERSE && input.accelBackward)
 	{
-		car_speed -= acceleration;
-		if (car_speed < -MAX_SPEED)
-			car_speed = -MAX_SPEED;
+		speed -= acceleration;
+		if (speed < -MAX_SPEED)
+			speed = -MAX_SPEED;
 	}
 
-	// 전진 처리
-	if (currentGear == DRIVE && isAcceleratingForward)
+	// 전진
+	if (currentGear == DRIVE && input.accelForward)
 	{
-		car_speed += acceleration;
-		if (car_speed > MAX_SPEED)
-			car_speed = MAX_SPEED;
+		speed += acceleration;
+		if (speed > MAX_SPEED)
+			speed = MAX_SPEED;
 	}
 
-	if (isBraking)
+	// 브레이크
+	if (input.brake)
 	{
-		if (car_speed > 0.0f)
+		if (speed > 0.0f)
 		{
-			car_speed -= deceleration;
-			if (car_speed < 0.0f)
-				car_speed = 0.0f;
+			speed -= deceleration;
+			if (speed < 0.0f) speed = 0.0f;
 		}
-		else if (car_speed < 0.0f)
+		else if (speed < 0.0f)
 		{
-			car_speed += deceleration;
-			if (car_speed > 0.0f)
-				car_speed = 0.0f;
+			speed += deceleration;
+			if (speed > 0.0f) speed = 0.0f;
 		}
 	}
 
-	if (!isAcceleratingForward && !isAcceleratingBackward && !isBraking)
+	// 자연 감속
+	if (!input.accelForward && !input.accelBackward && !input.brake)
 	{
-		// 자연 감속
-		if (car_speed > 0.0f)
+		if (speed > 0.0f)
 		{
-			car_speed -= friction;
-			if (car_speed < 0.0f)
-				car_speed = 0.0f;
+			speed -= friction;
+			if (speed < 0.0f) speed = 0.0f;
 		}
-		else if (car_speed < 0.0f)
+		else if (speed < 0.0f)
 		{
-			car_speed += friction;
-			if (car_speed > 0.0f)
-				car_speed = 0.0f;
+			speed += friction;
+			if (speed > 0.0f) speed = 0.0f;
 		}
 	}
 }
+
+void Car_UpdateSpeed(const CarInput& input)
+{
+	Car_UpdateSpeed(input, 0);
+}
+
 
 void Car_Init()
 {
-    car_dx = 0.0f;
-    car_dy = WHEEL_SIZE;
-    car_dz = -3.0f;
-    car_rotateY = 0.0f;
-
-    front_wheels_rotateY = 0.0f;
-    wheel_rect_rotateX = 0.0f;
-
-    car_speed = 0.0f;
-    isAcceleratingForward = false;
-    isAcceleratingBackward = false;
-    isBraking = false;
+	Car_InitForStage(1);
 }
 
+// 스테이지별 시작 위치/회전 설정
+void Car_InitForStage(int stage)
+{
+	for (int i = 0; i < kCarCount; ++i)
+	{
+		g_cars[i].dy = 0.125f;
+		g_cars[i].speed = 0.0f;
+		g_cars[i].wheelRotX = 0.0f;
+	}
+
+	switch (stage)
+	{
+	case 1:
+		// 스테이지 1 플레이어 배치
+		g_cars[0].dx = 4.5f; g_cars[0].dz = -4.5f; g_cars[0].rotY = 0.0f;
+		g_cars[1].dx = 4.5f; g_cars[1].dz = 4.5f; g_cars[1].rotY = -90.0f;
+		g_cars[2].dx = -4.5f; g_cars[2].dz = 4.5f; g_cars[2].rotY = 180.0f;
+		g_cars[3].dx = -4.5f; g_cars[3].dz = -4.5f; g_cars[3].rotY = 90.0f;
+		break;
+
+	case 2:
+		// 스테이지 2 플레이어 배치
+		g_cars[0].dx = 0.0f; g_cars[0].dz = -6.0f; g_cars[0].rotY = 0.0f;
+		g_cars[1].dx = 2.0f; g_cars[1].dz = -6.0f; g_cars[1].rotY = 0.0f;
+		g_cars[2].dx = -2.0f; g_cars[2].dz = -6.0f; g_cars[2].rotY = 0.0f;
+		g_cars[3].dx = 0.0f; g_cars[3].dz = -8.0f; g_cars[3].rotY = 0.0f;
+		break;
+
+	case 3:
+		// 스테이지 3 플레이어 배치
+		g_cars[0].dx = -6.0f; g_cars[0].dz = -4.0f; g_cars[0].rotY = 90.0f;
+		g_cars[1].dx = -6.0f; g_cars[1].dz = 0.0f; g_cars[1].rotY = 90.0f;
+		g_cars[2].dx = -6.0f; g_cars[2].dz = 4.0f; g_cars[2].rotY = 90.0f;
+		g_cars[3].dx = -2.0f; g_cars[3].dz = -4.0f; g_cars[3].rotY = 0.0f;
+		break;
+
+	default:
+		Car_InitForStage(1);
+		break;
+	}
+
+	front_wheels_rotateY = 0.0f;
+	isAcceleratingForward = false;
+	isAcceleratingBackward = false;
+	isBraking = false;
+}
+
+
 // 차체의 변환 - 이를 기준으로 헤드라이트, 바퀴 등의 위치가 정해진다.
-glm::mat4 Car_Body()
+glm::mat4 Car_Body(int carIndex)
 {
 	glm::mat4 T = glm::mat4(1.0f);
 	glm::mat4 Ry = glm::mat4(1.0f);
-	//glm::mat4 S = glm::mat4(1.0f);
 
-	Ry = glm::rotate(Ry, glm::radians(car_rotateY), glm::vec3(0.0, 1.0, 0.0));
-	T = glm::translate(T, glm::vec3(car_dx, car_dy, car_dz));
+	Ry = glm::rotate(Ry, glm::radians(g_cars[carIndex].rotY), glm::vec3(0.0, 1.0, 0.0));
+	T = glm::translate(T,
+		glm::vec3(g_cars[carIndex].dx, g_cars[carIndex].dy, g_cars[carIndex].dz));
 
 	return T * Ry;
 }
-glm::mat4 Headlights(int left_right)
+
+glm::mat4 Car_Body()
+{
+	return Car_Body(0);
+}
+
+glm::mat4 Headlights(int left_right, int carIndex)
 {
 	glm::mat4 T = glm::mat4(1.0f);
 	glm::mat4 Ry = glm::mat4(1.0f);
@@ -117,11 +168,16 @@ glm::mat4 Headlights(int left_right)
 		T = glm::translate(T, glm::vec3(CAR_SIZE / 3, CAR_SIZE / 8, CAR_SIZE));
 	}
 
-	return Car_Body() * T;
+	return Car_Body(carIndex) * T;
+}
+
+glm::mat4 Headlights(int left_right)
+{
+	return Headlights(left_right, 0);
 }
 
 // 바퀴 변환 - 앞바퀴 회전
-glm::mat4 Wheels(int num)
+glm::mat4 Wheels(int num, int carIndex)
 {
 	glm::mat4 T2 = glm::mat4(1.0f);
 	if (num == 1) //앞 기준 왼쪽 앞
@@ -140,9 +196,15 @@ glm::mat4 Wheels(int num)
 	{
 		T2 = glm::translate(T2, glm::vec3(CAR_SIZE / 2 + WHEEL_SIZE / 4, 0.0f, -CAR_SIZE * 0.5f));
 	}
-	return Car_Body() * T2;
+	return Car_Body(carIndex) * T2;
 }
-glm::mat4 Wheel_rects(int num)
+
+glm::mat4 Wheels(int num)
+{
+	return Wheels(num, 0);
+}
+
+glm::mat4 Wheel_rects(int num, int carIndex)
 {
 	glm::mat4 T = glm::mat4(1.0f);
 	glm::mat4 T2 = glm::mat4(1.0f);
@@ -175,11 +237,17 @@ glm::mat4 Wheel_rects(int num)
 	}
 
 	glm::mat4 Rx = glm::mat4(1.0f);
-	Rx = glm::rotate(Rx, glm::radians(wheel_rect_rotateX), glm::vec3(1.0, 0.0, 0.0));
+	Rx = glm::rotate(Rx, glm::radians(g_cars[carIndex].wheelRotX), glm::vec3(1.0, 0.0, 0.0));
 
-	return Car_Body() * T2 * Ry * Rx * T;
+	return Car_Body(carIndex) * T2 * Ry * Rx * T;
 }
-glm::mat4 Wheel_on_000(int num, int type) //num은 4개 바퀴의 번호, type은 실린더, 뚜껑 객체 종류
+
+glm::mat4 Wheel_rects(int num)
+{
+	return Wheel_rects(num, 0);
+}
+
+glm::mat4 Wheel_on_000(int num, int type, int carIndex) //num은 4개 바퀴의 번호, type은 실린더, 뚜껑 객체 종류
 {
 	glm::mat4 T = glm::mat4(1.0f);
 	glm::mat4 Ry = glm::mat4(1.0f);
@@ -187,6 +255,7 @@ glm::mat4 Wheel_on_000(int num, int type) //num은 4개 바퀴의 번호, type은 실린더
 	//glm::mat4 S = glm::mat4(1.0f);
 
 	Ry = glm::rotate(Ry, glm::radians(90.0f), glm::vec3(0.0, 1.0, 0.0));
+
 	if (num == 1 || num == 2)
 	{
 		//앞바퀴들에게 회전 변환 추가 적용
@@ -205,7 +274,12 @@ glm::mat4 Wheel_on_000(int num, int type) //num은 4개 바퀴의 번호, type은 실린더
 		T = glm::translate(T, glm::vec3(0.0f, 0.0f, WHEEL_SIZE / 4));
 	}
 
-	return Wheels(num) * Ry2 * Ry * T;
+	return Wheels(num, carIndex) * Ry2 * Ry * T;
+}
+
+glm::mat4 Wheel_on_000(int num, int type)
+{
+	return Wheel_on_000(num, type, 0);
 }
 
 std::vector<std::pair<float, float>> Car_GetRotatedCorners(float x, float z, float angle)
@@ -235,34 +309,70 @@ std::vector<std::pair<float, float>> Car_GetRotatedCorners(float x, float z, flo
 	return rotatedCorners;
 }
 
-std::vector<std::pair<float, float>> Car_GetRotatedCorners()
+std::vector<std::pair<float, float>> Car_GetRotatedCorners(int carIndex)
 {
-	return Car_GetRotatedCorners(car_dx, car_dz, car_rotateY);
+	return Car_GetRotatedCorners(
+		g_cars[carIndex].dx,
+		g_cars[carIndex].dz,
+		g_cars[carIndex].rotY
+	);
 }
 
+std::vector<std::pair<float, float>> Car_GetRotatedCorners()
+{
+	return Car_GetRotatedCorners(0);
+}
 
+float Car_GetDX(int carIndex) { return g_cars[carIndex].dx; }
+float Car_GetDY(int carIndex) { return g_cars[carIndex].dy; }
+float Car_GetDZ(int carIndex) { return g_cars[carIndex].dz; }
+float Car_GetRotationY(int carIndex) { return g_cars[carIndex].rotY; }
+float Car_GetWheelRotationX(int carIndex) { return g_cars[carIndex].wheelRotX; }
+float Car_GetSpeed(int carIndex) { return g_cars[carIndex].speed; }
 
-float Car_GetDX() { return car_dx; }
-float Car_GetDY() { return car_dy; }
-float Car_GetDZ() { return car_dz; }
-float Car_GetRotationY() { return car_rotateY; }
+float Car_GetDX() { return Car_GetDX(0); }
+float Car_GetDY() { return Car_GetDY(0); }
+float Car_GetDZ() { return Car_GetDZ(0); }
+float Car_GetRotationY() { return Car_GetRotationY(0); }
+float Car_GetWheelRotationX() { return Car_GetWheelRotationX(0); }
+float Car_GetSpeed() { return Car_GetSpeed(0); }
+
 float Car_GetFrontWheelRotationY() { return front_wheels_rotateY; }
-float Car_GetWheelRotationX() { return wheel_rect_rotateX; }
-float Car_GetSpeed() { return car_speed; }
 bool  Car_IsAcceleratingForward() { return isAcceleratingForward; }
 bool  Car_IsAcceleratingBackward() { return isAcceleratingBackward; }
 bool  Car_IsBraking() { return isBraking; }
 
-void Car_SetPosition(float dx, float dz)
+const CarState& Car_GetState(int carIndex)
 {
-	car_dx = dx;
-	car_dz = dz;
+	return g_cars[carIndex];
 }
 
-void Car_SetRotationY(float angle) { car_rotateY = angle; }
+void Car_SetState(int carIndex, const CarState& state)
+{
+	g_cars[carIndex] = state;
+}
+
+void Car_SetPosition(int carIndex, float dx, float dz)
+{
+	g_cars[carIndex].dx = dx;
+	g_cars[carIndex].dz = dz;
+}
+
+void Car_SetRotationY(int carIndex, float angle) { g_cars[carIndex].rotY = angle; }
+void Car_SetWheelRotationX(int carIndex, float angle) { g_cars[carIndex].wheelRotX = angle; }
+void Car_SetSpeed(int carIndex, float speed) { g_cars[carIndex].speed = speed; }
+
+void Car_SetPosition(float dx, float dz) { Car_SetPosition(0, dx, dz); }
+void Car_SetRotationY(float angle) { Car_SetRotationY(0, angle); }
+void Car_SetWheelRotationX(float angle) { Car_SetWheelRotationX(0, angle); }
+void Car_SetSpeed(float speed) { Car_SetSpeed(0, speed); }
+
 void Car_SetFrontWheelRotationY(float angle) { front_wheels_rotateY = angle; }
-void Car_SetWheelRotationX(float angle) { wheel_rect_rotateX = angle; }
-void Car_SetSpeed(float speed) { car_speed = speed; }
 void Car_SetAcceleratingForward(bool status) { isAcceleratingForward = status; }
 void Car_SetAcceleratingBackward(bool status) { isAcceleratingBackward = status; }
 void Car_SetBraking(bool status) { isBraking = status; }
+
+int Car_Count()
+{
+	return kCarCount;
+}

@@ -66,76 +66,127 @@ bool checkCollisionWalls(const std::vector<std::pair<float, float>>& carCorners,
 
 bool checkCollisionObstacle(const std::vector<std::pair<float, float>>& carCorners)
 {
-    for (int p = 0; p < 4; ++p)          // 주차장 4개
-    {
-        for (int i = 0; i < 5; ++i)      // 각 주차장의 장애물 슬롯 5개
-        {
-            float ox = obstacle_xz[p][i][0];
-            float oz = obstacle_xz[p][i][1];
+	for (int p = 0; p < 4; ++p)          // 주차장 4개
+	{
+		for (int i = 0; i < 5; ++i)      // 각 주차장의 장애물 슬롯 5개
+		{
+			float ox = obstacle_xz[p][i][0];
+			float oz = obstacle_xz[p][i][1];
 
-            if (ox == 100.0f && oz == 100.0f)
-                continue;
+			if (ox == 100.0f && oz == 100.0f)
+				continue;
 
-            // 크기 가져오기
-            float currentExtentX = OBSTACLE_WIDTH * obstacle_scale[p][i].x;
-            float currentExtentZ = OBSTACLE_HEIGHT * obstacle_scale[p][i].z;
+			// 크기 가져오기
+			float currentExtentX = OBSTACLE_WIDTH * obstacle_scale[p][i].x;
+			float currentExtentZ = OBSTACLE_HEIGHT * obstacle_scale[p][i].z;
 
-            // 회전 적용
-            // 90도 회전되어 있다면 가로/세로 길이를 서로 바꿈
-            if (std::abs(obstacle_ry[p][i]) > 1.0f) 
-            {
-                std::swap(currentExtentX, currentExtentZ);
-            }
+			// 회전 적용
+			// 90도 회전되어 있다면 가로/세로 길이를 서로 바꿈
+			if (std::abs(obstacle_ry[p][i]) > 1.0f)
+			{
+				std::swap(currentExtentX, currentExtentZ);
+			}
 
-            // 계산된 크기로 충돌 박스(AABB) 범위 설정
-            float obstacleMinX = ox - currentExtentX;
-            float obstacleMaxX = ox + currentExtentX;
-            float obstacleMinZ = oz - currentExtentZ;
-            float obstacleMaxZ = oz + currentExtentZ;
+			// 계산된 크기로 충돌 박스(AABB) 범위 설정
+			float obstacleMinX = ox - currentExtentX;
+			float obstacleMaxX = ox + currentExtentX;
+			float obstacleMinZ = oz - currentExtentZ;
+			float obstacleMaxZ = oz + currentExtentZ;
 
-            // 꼭짓점 포함 여부 (Point in AABB)
-            for (const auto& corner : carCorners)
-            {
-                if (obstacleMinX <= corner.first && corner.first <= obstacleMaxX &&
-                    obstacleMinZ <= corner.second && corner.second <= obstacleMaxZ)
-                {
-                    return true;
-                }
-            }
+			// 꼭짓점 포함 여부 (Point in AABB)
+			for (const auto& corner : carCorners)
+			{
+				if (obstacleMinX <= corner.first && corner.first <= obstacleMaxX &&
+					obstacleMinZ <= corner.second && corner.second <= obstacleMaxZ)
+				{
+					return true;
+				}
+			}
 
-            std::vector<std::pair<float, float>> obstacleCorners = {
-                {obstacleMinX, obstacleMinZ},
-                {obstacleMaxX, obstacleMinZ},
-                {obstacleMaxX, obstacleMaxZ},
-                {obstacleMinX, obstacleMaxZ}
-            };
+			std::vector<std::pair<float, float>> obstacleCorners = {
+				{obstacleMinX, obstacleMinZ},
+				{obstacleMaxX, obstacleMinZ},
+				{obstacleMaxX, obstacleMaxZ},
+				{obstacleMinX, obstacleMaxZ}
+			};
 
-            // 차가 장애물 안에 있는지 (Point in Polygon)
-            for (const auto& corner : obstacleCorners)
-            {
-                if (isPointInsidePolygon(carCorners, corner.first, corner.second))
-                    return true;
-            }
+			// 차가 장애물 안에 있는지 (Point in Polygon)
+			for (const auto& corner : obstacleCorners)
+			{
+				if (isPointInsidePolygon(carCorners, corner.first, corner.second))
+					return true;
+			}
 
-            // 선분 교차 검사 (Line Intersection)
-            int carSize = carCorners.size();
-            int obstacleSize = obstacleCorners.size();
-            for (int i = 0; i < carSize; ++i)
-            {
-                for (int j = 0; j < obstacleSize; ++j)
-                {
-                    if (doLinesIntersect(
-                        carCorners[i].first, carCorners[i].second,
-                        carCorners[(i + 1) % carSize].first, carCorners[(i + 1) % carSize].second,
-                        obstacleCorners[j].first, obstacleCorners[j].second,
-                        obstacleCorners[(j + 1) % obstacleSize].first, obstacleCorners[(j + 1) % obstacleSize].second))
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
-    }
+			// 선분 교차 검사 (Line Intersection)
+			int carSize = carCorners.size();
+			int obstacleSize = obstacleCorners.size();
+			for (int i = 0; i < carSize; ++i)
+			{
+				for (int j = 0; j < obstacleSize; ++j)
+				{
+					if (doLinesIntersect(
+						carCorners[i].first, carCorners[i].second,
+						carCorners[(i + 1) % carSize].first, carCorners[(i + 1) % carSize].second,
+						obstacleCorners[j].first, obstacleCorners[j].second,
+						obstacleCorners[(j + 1) % obstacleSize].first, obstacleCorners[(j + 1) % obstacleSize].second))
+					{
+						return true;
+					}
+				}
+			}
+		}
+	}
 
-    return false;
+	return false;
+}
+
+
+bool checkCollisionCars(
+	const std::vector<std::pair<float, float>>& carCornersA,
+	const std::vector<std::pair<float, float>>& carCornersB)
+{
+	int sizeA = static_cast<int>(carCornersA.size());
+	int sizeB = static_cast<int>(carCornersB.size());
+
+	// 1) A의 꼭짓점이 B 안에 들어가 있는지 검사
+	for (const auto& corner : carCornersA)
+	{
+		if (isPointInsidePolygon(carCornersB, corner.first, corner.second))
+		{
+			return true;
+		}
+	}
+
+	// 2) B의 꼭짓점이 A 안에 들어가 있는지 검사
+	for (const auto& corner : carCornersB)
+	{
+		if (isPointInsidePolygon(carCornersA, corner.first, corner.second))
+		{
+			return true;
+		}
+	}
+
+	// 3) A의 변과 B의 변이 교차하는지 검사
+	for (int i = 0; i < sizeA; ++i)
+	{
+		float ax1 = carCornersA[i].first;
+		float az1 = carCornersA[i].second;
+		float ax2 = carCornersA[(i + 1) % sizeA].first;
+		float az2 = carCornersA[(i + 1) % sizeA].second;
+
+		for (int j = 0; j < sizeB; ++j)
+		{
+			float bx1 = carCornersB[j].first;
+			float bz1 = carCornersB[j].second;
+			float bx2 = carCornersB[(j + 1) % sizeB].first;
+			float bz2 = carCornersB[(j + 1) % sizeB].second;
+
+			if (doLinesIntersect(ax1, az1, ax2, az2, bx1, bz1, bx2, bz2))
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
 }

@@ -23,7 +23,7 @@ float PARKING_Z_MAX[4];
 
 void Environment_Init()
 {
-	Environment_SetupStage(1);
+    Environment_SetupStage(1);
 }
 
 void Environment_SetupStage(int stage)
@@ -67,7 +67,7 @@ void Environment_SetupStage(int stage)
         }
 
         // P1 장애물
-        obstacle_xz[0][0][0] = FINISH_OFFSET_X[0] - 1.05; 
+        obstacle_xz[0][0][0] = FINISH_OFFSET_X[0] - 1.05;
         obstacle_xz[0][0][1] = FINISH_OFFSET_Z[0];
 
         obstacle_xz[0][1][0] = FINISH_OFFSET_X[0] + 1.05;
@@ -76,7 +76,7 @@ void Environment_SetupStage(int stage)
         obstacle_xz[0][2][1] = FINISH_OFFSET_Z[0];
         obstacle_xz[0][3][0] = FINISH_OFFSET_X[0] + 1.05 * 3;
         obstacle_xz[0][3][1] = FINISH_OFFSET_Z[0];
-        obstacle_xz[0][4][0] = FINISH_OFFSET_X[0] + 1.05 * 4; 
+        obstacle_xz[0][4][0] = FINISH_OFFSET_X[0] + 1.05 * 4;
         obstacle_xz[0][4][1] = FINISH_OFFSET_Z[0];
 
 
@@ -88,7 +88,7 @@ void Environment_SetupStage(int stage)
         obstacle_xz[1][1][1] = FINISH_OFFSET_Z[1] + 1.05;
         obstacle_ry[1][1] = 90.0f;
         obstacle_xz[1][2][0] = FINISH_OFFSET_X[1];
-        obstacle_xz[1][2][1] = FINISH_OFFSET_Z[1] + 1.05 * 2; 
+        obstacle_xz[1][2][1] = FINISH_OFFSET_Z[1] + 1.05 * 2;
         obstacle_ry[1][2] = 90.0f;
         obstacle_xz[1][3][0] = FINISH_OFFSET_X[1];
         obstacle_xz[1][3][1] = FINISH_OFFSET_Z[1] + 1.05 * 3;
@@ -100,7 +100,7 @@ void Environment_SetupStage(int stage)
 
         // P3 장애물
         obstacle_xz[2][0][0] = FINISH_OFFSET_X[2];
-        obstacle_xz[2][0][1] = FINISH_OFFSET_Z[2] - 1.05 * 4; 
+        obstacle_xz[2][0][1] = FINISH_OFFSET_Z[2] - 1.05 * 4;
         obstacle_ry[2][0] = 90.0f;
 
         obstacle_xz[2][1][0] = FINISH_OFFSET_X[2];
@@ -108,7 +108,7 @@ void Environment_SetupStage(int stage)
         obstacle_ry[2][1] = 90.0f;
 
         obstacle_xz[2][2][0] = FINISH_OFFSET_X[2];
-        obstacle_xz[2][2][1] = FINISH_OFFSET_Z[2] - 1.05 * 2; 
+        obstacle_xz[2][2][1] = FINISH_OFFSET_Z[2] - 1.05 * 2;
         obstacle_ry[2][2] = 90.0f;
 
         obstacle_xz[2][3][0] = FINISH_OFFSET_X[2];
@@ -120,13 +120,13 @@ void Environment_SetupStage(int stage)
         obstacle_ry[2][4] = 90.0f;
 
         // P4 장애물
-        obstacle_xz[3][0][0] = FINISH_OFFSET_X[3] - 1.05 * 4; 
+        obstacle_xz[3][0][0] = FINISH_OFFSET_X[3] - 1.05 * 4;
         obstacle_xz[3][0][1] = FINISH_OFFSET_Z[3];
 
-        obstacle_xz[3][1][0] = FINISH_OFFSET_X[3] - 1.05 * 3; 
+        obstacle_xz[3][1][0] = FINISH_OFFSET_X[3] - 1.05 * 3;
         obstacle_xz[3][1][1] = FINISH_OFFSET_Z[3];
 
-        obstacle_xz[3][2][0] = FINISH_OFFSET_X[3] - 1.05 * 2; 
+        obstacle_xz[3][2][0] = FINISH_OFFSET_X[3] - 1.05 * 2;
         obstacle_xz[3][2][1] = FINISH_OFFSET_Z[3];
 
         obstacle_xz[3][3][0] = FINISH_OFFSET_X[3] - 1.05;
@@ -187,7 +187,7 @@ void Environment_SetupStage(int stage)
         obstacle_xz[2][0][1] = FINISH_OFFSET_Z[2];
         obstacle_ry[2][0] = 90.0f;
 
-        obstacle_xz[2][1][0] = FINISH_OFFSET_X[2] + 1.55f; 
+        obstacle_xz[2][1][0] = FINISH_OFFSET_X[2] + 1.55f;
         obstacle_xz[2][1][1] = FINISH_OFFSET_Z[2];
         obstacle_ry[2][1] = 90.0f;
 
@@ -199,7 +199,7 @@ void Environment_SetupStage(int stage)
 
         obstacle_xz[3][1][0] = FINISH_OFFSET_X[3] + 1.55f;
         obstacle_xz[3][1][1] = FINISH_OFFSET_Z[3];
-		obstacle_ry[3][1] = 90.0f;
+        obstacle_ry[3][1] = 90.0f;
 
         for (int k = 2; k < 5; k++) { obstacle_xz[3][k][0] = 100.0f; obstacle_xz[3][k][1] = 100.0f; }
     }
@@ -269,7 +269,7 @@ glm::mat4 Environment_GetObstacleMatrix(int parkingIdx, int obsIdx)
 
     // 설정된 각도만큼 회전
     float angle = obstacle_ry[parkingIdx][obsIdx];
-    if (angle != 0.0f) 
+    if (angle != 0.0f)
     {
         T = glm::rotate(T, glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
     }

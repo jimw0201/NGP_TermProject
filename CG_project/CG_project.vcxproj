@@ -134,6 +134,7 @@
     <ClCompile Include="car.cpp" />
     <ClCompile Include="collision.cpp" />
     <ClCompile Include="environment.cpp" />
+    <ClCompile Include="err.cpp" />
     <ClCompile Include="game_state.cpp" />
     <ClCompile Include="input_handle.cpp" />
     <ClCompile Include="mesh.cpp" />
@@ -152,10 +153,9 @@
     <ClInclude Include="game_state.h" />
     <ClInclude Include="input_handle.h" />
     <ClInclude Include="mesh.h" />
+    <ClInclude Include="protocol.h" />
     <ClInclude Include="renderer.h" />
     <ClInclude Include="shader.h" />
-    <ClInclude Include="sharedGameData.h" />
-    <ClInclude Include="protocol.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
