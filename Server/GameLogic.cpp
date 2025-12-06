@@ -386,6 +386,7 @@ void Server_CheckAllCollisions() {
         // 5. 충돌 공통 후처리 (나중에 충돌 페널티 넣을 자리)
         if (isColliding)
         {
+            stats.CollisionCount++;
             player.car_speed = 0.0f;
         }
     }
