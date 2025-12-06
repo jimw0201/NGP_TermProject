@@ -402,19 +402,96 @@ void Server_CheckAllCollisions() {
     }
 }
 
-bool Server_CheckGameOver() {
-    EnterCriticalSection(&g_cs);
+static bool IsCarInsideParkingArea(const ParkingArea& area, const PlayerData& data)
+{
+    auto corners = getRotatedCarCorners(data.car_dx, data.car_dz, data.car_rotateY);
 
+    int insideCount = 0;
+
+    for (const auto& c : corners)
+    {
+        float x = c.first;
+        float z = c.second;
+
+        if (x >= area.xMin && x <= area.xMax && z >= area.zMin && z <= area.zMax)
+        {
+            insideCount++;
+        }
+    }
+
+    // 꼭짓점 네 개가 다 안에 있는가 계산
+    return (insideCount >= 4);
+}
+
+void Server_UpdateParkingState(int playerID, int srvElapsedSec)
+{
+    // PlayerID 유효 체크
+    if (playerID < 0 || playerID >= MAX_PLAYERS) return;
+
+    ClientInfo& client = g_clients[playerID];
+    if (!client.IsConnected) return;
+
+    PlayerData& data = client.playerData;
+    PlayerGameStats& stats = client.playerStats;
+
+    // 이미 주차 완료된 놈은 검증 스킵
+    if (stats.IsParked) return;
+
+    // 기어 P 아니면 주차 안 한 거
+    if (data.currentGear != GearState::PARK)
+    {
+        stats.IsEnterParking = false;
+        return;
+    }
+
+    // 각 플레이어한테 할당된 주차 구역 인덱스
+    int parkingIdx = kPlayerToParkingIndex[playerID];
+
+    // 플레이어 수 < 주차장 수 예외 보호
+    if (parkingIdx < 0 || parkingIdx >= PARKING_COUNT) return;
+
+    const ParkingArea& myArea = g_parkingAreas[parkingIdx];
+
+    // 자기 주차 구역 안에 차가 완전히 들어왔는가 검사
+    bool insideMyArea = IsCarInsideParkingArea(myArea, data);
+
+    if (!insideMyArea)
+    {
+        // 아직 주차 구역에 완전히 안 들어옴
+        stats.IsEnterParking = false;
+        return;
+    }
+
+    // 예외들 처리했으니 주차 판정
+    stats.IsEnterParking = true;
+    stats.IsParked = true;
+    stats.ParkingSec = static_cast<float>(srvElapsedSec);
+
+    //잔여 속도 제거
+    data.car_speed = 0.0f;
+
+    printf("[서버] 플레이어 %d 주차 완료 (%.1f초)\n", playerID, stats.ParkingSec);
+}
+
+bool Server_CheckGameOver() 
+{
+    bool anyConnected = false;
     bool allParked = true;
-    for (int i = 0; i < MAX_PLAYERS; i++) {
-        // 접속 중인 플레이어 중 한 명이라도 주차를 안 했으면 게임 오버 아님
-        if (g_clients[i].IsConnected && !g_clients[i].playerStats.IsParked) {
+
+    for (int i = 0; i < MAX_PLAYERS; ++i)
+    {
+        if (!g_clients[i].IsConnected)   continue;
+
+        anyConnected = true;
+
+        if (!g_clients[i].playerStats.IsParked)
+        {
             allParked = false;
             break;
         }
     }
 
-    LeaveCriticalSection(&g_cs);
+    if (!anyConnected) return false;
 
     return allParked;
 }

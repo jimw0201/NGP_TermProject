@@ -14,6 +14,8 @@
 #define UDP_PORT 9001
 #define TIMER_VELOCITY 16
 
+const int MAX_STAGE = 3;
+
 
 // 3라운드 시작 위치
 const float g_round1_StartPos[MAX_PLAYERS][3] = {
@@ -78,13 +80,13 @@ unsigned int WINAPI TCP_HandleClient(LPVOID arg) {
         C2S_PlayerUpdatePacket* pkt = (C2S_PlayerUpdatePacket*)recvBuf;
 
         // 디버그 출력
-        printf("[TCP] player %d input: W=%d SPACE=%d Q=%d E=%d handle=%.1f\n",
+        /*printf("[TCP] player %d input: W=%d SPACE=%d Q=%d E=%d handle=%.1f\n",
             playerID,
             pkt->myData.W_Pressed,
             pkt->myData.SPACE_Pressed,
             pkt->myData.Q_Pressed,
             pkt->myData.E_Pressed,
-            pkt->myData.handle_rotate_z);
+            pkt->myData.handle_rotate_z);*/
 
         // 키 상태 전체를 그냥 복사하는 게 더 깔끔함
         g_clients[playerID].LastReceivedKeys = pkt->myData;
@@ -116,7 +118,7 @@ unsigned int WINAPI Server_GameLoop(LPVOID arg) {
                 printf("[Game] 4명 접속 완료. 게임을 시작합니다.\n");
 
                 g_CurrentStage = 1;
-                Server_LoadStage(g_CurrentStage);
+                Server_LoadMap(g_CurrentStage);
 
                 g_GameStartTime = GetTickCount();
                 g_IsGameRunning = true;
@@ -156,12 +158,65 @@ unsigned int WINAPI Server_GameLoop(LPVOID arg) {
                     Server_movement(i);     // 물리 연산
                 }
             }
+
             Server_CheckAllCollisions();    // 충돌 판정
+
+            for (int i = 0; i < MAX_PLAYERS; ++i)
+            {
+                if (!g_clients[i].IsConnected) continue;
+                Server_UpdateParkingState(i, updatePkt.srvElapsedSec);
+            }
 
             if (Server_CheckGameOver())
             {
                 g_CurrentStage++;
-                Server_LoadStage(g_CurrentStage);
+
+                Server_LoadMap(g_CurrentStage);
+
+                const float INITIAL_CAR_Y = 0.125f;
+                const float (*startPos)[3] = nullptr;
+
+                if (g_CurrentStage == 1) startPos = g_round1_StartPos;
+                else if (g_CurrentStage == 2) startPos = g_round2_StartPos;
+                else startPos = g_round3_StartPos;
+
+                for (int i = 0; i < MAX_PLAYERS; ++i)
+                {
+                    if (!g_clients[i].IsConnected)   continue;
+
+                    PlayerGameStats& st = g_clients[i].playerStats;
+                    st.IsParked = false;
+                    st.IsEnterParking = false;
+                    st.ParkingSec = 0.0f;
+                    st.CollisionCount = 0;
+
+                    ClientInfo& c = g_clients[i];
+
+                    c.playerData.car_dx = startPos[i][0];
+                    c.playerData.car_dy = INITIAL_CAR_Y;
+                    c.playerData.car_dz = startPos[i][1];
+                    c.playerData.car_rotateY = startPos[i][2];
+
+                    c.playerData.car_speed = 0.0f;
+                    c.playerData.front_wheels_rotateY = 0.0f;
+                    c.playerData.wheel_rect_rotateX = 0.0f;
+                    c.playerData.currentGear = GearState::DRIVE;
+
+                    c.playerStats.CollisionCount = 0;
+                    c.playerStats.ParkingSec = 0.0f;
+                    c.playerStats.IsParked = false;
+                    c.playerStats.IsEnterParking = false;
+
+                    c.Q_PrevServerState = false;
+                    c.E_PrevServerState = false;
+                }
+
+
+                g_GameStartTime = GetTickCount();
+            }
+            else
+            {
+                // EndMatch 여기 넣으면 됩니다
             }
 
             updatePkt.srvElapsedSec = (GetTickCount() - g_GameStartTime) / 1000;

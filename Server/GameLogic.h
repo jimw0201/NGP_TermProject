@@ -32,6 +32,8 @@ void Server_movement(int PlayerID);							// 물리 연산(키 입력)
 
 void Server_CheckAllCollisions();							// 충돌 및 주차 판정
 
+void Server_UpdateParkingState(int playerID, int srvElapsedSec);
+
 bool Server_CheckGameOver();								// 게임 종료 판정
 
 // 맵 정보
@@ -74,8 +76,10 @@ struct FinishPoint
 	float z;
 };
 
+static const int kPlayerToParkingIndex[MAX_PLAYERS] = {1, 3, 2, 0};	// 순서가 이상하게 매핑되어 있음
+
 extern FinishPoint g_finishPoints[PARKING_COUNT];
 
 // 맵 스테이지 데이터 초기화
 // 서버 시작 시 기본 값 세팅, 라운드가 바뀔 때 마다 스테이지에 맞게 g_obstacles, g_parkingAreas, g_finishPoints 채우기
-void Server_LoadStage(int stage);
+void Server_LoadMap(int stage);
