@@ -1,11 +1,6 @@
 ﻿  GameLogic.cpp
-C:\Users\mdk73\Downloads\NGP_TermProject-JMW\Server\GameLogic.cpp(135,22): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\mdk73\Downloads\NGP_TermProject-JMW\Server\GameLogic.cpp(136,22): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\mdk73\Downloads\NGP_TermProject-JMW\Server\GameLogic.cpp(168,24): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\mdk73\Downloads\NGP_TermProject-JMW\Server\GameLogic.cpp(169,24): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-  Server.cpp
-C:\Users\mdk73\Downloads\NGP_TermProject-JMW\Server\Server.cpp(67,17): warning C4311: '형식 캐스트': 'LPVOID'에서 'int'(으)로 포인터가 잘립니다.
-C:\Users\mdk73\Downloads\NGP_TermProject-JMW\Server\Server.cpp(67,17): warning C4302: '형식 캐스트': 'LPVOID'에서 'int'(으)로 잘립니다.
-C:\Users\mdk73\Downloads\NGP_TermProject-JMW\Server\Server.cpp(306,99): warning C4312: '형식 캐스트': 'int'에서 더 큰 'LPVOID'(으)로의 변환입니다.
-  코드를 생성하고 있습니다...
-  Server.vcxproj -> C:\Users\mdk73\Downloads\NGP_TermProject-JMW\Server\x64\Debug\Server.exe
+C:\Users\mdk73\OneDrive\문서\GitHub\NGP_TermProject\Server\GameLogic.cpp(135,22): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\mdk73\OneDrive\문서\GitHub\NGP_TermProject\Server\GameLogic.cpp(136,22): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\mdk73\OneDrive\문서\GitHub\NGP_TermProject\Server\GameLogic.cpp(168,24): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\mdk73\OneDrive\문서\GitHub\NGP_TermProject\Server\GameLogic.cpp(169,24): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+  Server.vcxproj -> C:\Users\mdk73\OneDrive\문서\GitHub\NGP_TermProject\Server\x64\Debug\Server.exe

@@ -44,6 +44,7 @@ const float g_round3_StartPos[MAX_PLAYERS][3] = {
 CRITICAL_SECTION g_cs;
 ClientInfo g_clients[MAX_PLAYERS];
 int g_connectedClients = 0;
+int g_CurrentStage = 1;
 
 SOCKET g_UDPSocket;
 bool g_IsGameRunning;
@@ -102,43 +103,6 @@ unsigned int WINAPI TCP_HandleClient(LPVOID arg) {
 	return 0;
 }
 
-/*
-unsigned int WINAPI Server_UDP(LPVOID arg) {
-    char recvBuffer[2048];
-    sockaddr_in clientAddr;
-    int addrLen = sizeof(clientAddr);
-
-    printf("[UDP] Server_UDP 스레드 시작 (Port: %d)...\n", UDP_PORT);
-
-    while (true) {
-        int recvLen = recvfrom(g_UDPSocket, recvBuffer, sizeof(recvBuffer), 0, (sockaddr*)&clientAddr, &addrLen);
-        if (recvLen == SOCKET_ERROR) {
-            continue;
-        }
-
-        PacketType* pType = (PacketType*)recvBuffer;
-        if (*pType == C2S_PlayerUpdate) {
-            C2S_PlayerUpdatePacket* pkt = (C2S_PlayerUpdatePacket*)recvBuffer;
-            int id = pkt->playerID;
-
-            if (id < 0 || id >= MAX_PLAYERS) continue; // Invalid ID
-
-            EnterCriticalSection(&g_cs);
-            {
-                if (g_clients[id].IsConnected && !g_clients[id].UDPAddrInitialized) {
-                    g_clients[id].UDPaddr = clientAddr;
-                    g_clients[id].UDPAddrInitialized = true;
-                    printf("[UDP] 클라이언트 %d의 UDP 주소 등록 완료\n", id);
-                }
-
-                g_clients[id].LastReceivedKeys = pkt->myData;
-            }
-            LeaveCriticalSection(&g_cs);
-        }
-    }
-    return 0;
-}
-*/
 
 // 클라로 패킷 전송 스레드 함수
 unsigned int WINAPI Server_GameLoop(LPVOID arg) {
@@ -150,6 +114,9 @@ unsigned int WINAPI Server_GameLoop(LPVOID arg) {
         if (!g_IsGameRunning) {
             if (g_connectedClients == MAX_PLAYERS) {
                 printf("[Game] 4명 접속 완료. 게임을 시작합니다.\n");
+
+                g_CurrentStage = 1;
+                Server_LoadStage(g_CurrentStage);
 
                 g_GameStartTime = GetTickCount();
                 g_IsGameRunning = true;
@@ -190,6 +157,12 @@ unsigned int WINAPI Server_GameLoop(LPVOID arg) {
                 }
             }
             Server_CheckAllCollisions();    // 충돌 판정
+
+            if (Server_CheckGameOver())
+            {
+                g_CurrentStage++;
+                Server_LoadStage(g_CurrentStage);
+            }
 
             updatePkt.srvElapsedSec = (GetTickCount() - g_GameStartTime) / 1000;
             for (int i = 0; i < MAX_PLAYERS; i++) {

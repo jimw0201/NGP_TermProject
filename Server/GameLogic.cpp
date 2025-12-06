@@ -225,6 +225,85 @@ static bool checkCollisionWalls(const std::vector<std::pair<float, float>>& carC
     return false;
 }
 
+static bool checkCollisionObstacles(const std::vector<std::pair<float, float>>& carCorners)
+{
+    // 스테이지 별 장애물 정보
+    for (int p = 0; p < PARKING_COUNT; ++p)
+    {
+        for (int s = 0; s < OBSTACLE_SLOT_COUNT; ++s)
+        {
+            const Obstacle_Info& obs = g_obstacles[p][s];
+
+            // 사용 안 하는 슬롯은 스킵
+            if (obs.scaleX <= 0.0f || obs.scaleZ <= 0.0f) continue;
+
+            // 기본 반경
+            float halfX = OBSTACLE_WIDTH * obs.scaleX;
+            float halfZ = OBSTACLE_HEIGHT * obs.scaleZ;
+
+            // 90도 회전된 장애물은 X/Z 길이 뒤집기
+            if (fabsf(obs.rotYDeg) > 1.0f)
+            {
+                std::swap(halfX, halfZ);
+            }
+
+            float minX = obs.x - halfX;
+            float maxX = obs.x + halfX;
+            float minZ = obs.z - halfZ;
+            float maxZ = obs.z + halfZ;
+
+            // 1) 차 꼭짓점이 장애물 AABB 안에 들어가면 충돌
+            for (const auto& corner : carCorners)
+            {
+                if (minX <= corner.first && corner.first <= maxX &&
+                    minZ <= corner.second && corner.second <= maxZ)
+                {
+                    return true;
+                }
+            }
+
+            // 2) 장애물 꼭짓점이 차의 폴리곤 안에 들어가도 충돌
+            std::vector<std::pair<float, float>>obstacleCorners = {
+                {minX, minZ}, {maxX, minZ}, {maxX, maxZ}, {minX, maxZ}
+            };
+
+            for (const auto& oc : obstacleCorners)
+            {
+                if (isPointInsidePolygon(carCorners, oc.first, oc.second))
+                {
+                    return true;
+                }
+            }
+
+            // 3) 선분 교차 (차 폴리곤의 변 vs 장애물 박스의 변)
+            int carSize = (int)carCorners.size();
+            int obsSize = (int)obstacleCorners.size();
+            for (int i = 0; i < carSize; ++i)
+            {
+                float ax1 = carCorners[i].first;
+                float az1 = carCorners[i].second;
+                float ax2 = carCorners[(i + 1) % carSize].first;
+                float az2 = carCorners[(i + 1) % carSize].second;
+
+                for (int j = 0; j < obsSize; ++j)
+                {
+                    float bx1 = obstacleCorners[j].first;
+                    float bz1 = obstacleCorners[j].second;
+                    float bx2 = obstacleCorners[(j + 1) % obsSize].first;
+                    float bz2 = obstacleCorners[(j + 1) % obsSize].second;
+
+                    if (doLinesIntersect(ax1, az1, ax2, az2, bx1, bz1, bx2, bz2))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
 static bool checkCollisionCars (const std::vector<std::pair<float, float>>& carCornersA, 
     const std::vector<std::pair<float, float>>& carCornersB)
 {
@@ -274,11 +353,15 @@ void Server_CheckAllCollisions() {
         // 2. 벽 충돌 검사
         if (checkCollisionWalls(currentCorners)) {
             isColliding = true;
+            printf("Collision With Wall\n");
         }
 
-        // 장애물 충돌은 맵 데이터가 없으므로 제외함
+        // 3. 장애물 충돌 검사
+        if (!isColliding && checkCollisionObstacles(currentCorners)) {
+            isColliding = true;
+        }
 
-        // 3. 다른 플레이어와의 충돌 검사
+        // 4. 다른 플레이어와의 충돌 검사
         if (!isColliding) {
             for (int j = 0; j < MAX_PLAYERS; j++) {
                 // 나 자신이나 접속 안 한 플레이어는 패스
@@ -292,11 +375,18 @@ void Server_CheckAllCollisions() {
                 // 충돌 검사
                 if (checkCollisionCars(currentCorners, otherCorners)) {
                     isColliding = true;
+                    printf("Collision With Player");
                     // 상대방도 멈추게 처리
                     g_clients[j].playerData.car_speed = 0.0f;
                     break;
                 }
             }
+        }
+
+        // 5. 충돌 공통 후처리 (나중에 충돌 페널티 넣을 자리)
+        if (isColliding)
+        {
+            player.car_speed = 0.0f;
         }
     }
 }

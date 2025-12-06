@@ -46,9 +46,9 @@
               "Title": "GameLogic.h",
               "DocumentMoniker": "C:\\Users\\mdk73\\OneDrive\\\uBB38\uC11C\\GitHub\\NGP_TermProject\\Server\\Server\\GameLogic.h",
               "RelativeDocumentMoniker": "GameLogic.h",
-              "ToolTip": "C:\\Users\\mdk73\\OneDrive\\\uBB38\uC11C\\GitHub\\NGP_TermProject\\Server\\Server\\GameLogic.h*",
-              "RelativeToolTip": "GameLogic.h*",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAAAAYAAAAVAAAAAAAAAA==",
+              "ToolTip": "C:\\Users\\mdk73\\OneDrive\\\uBB38\uC11C\\GitHub\\NGP_TermProject\\Server\\Server\\GameLogic.h",
+              "RelativeToolTip": "GameLogic.h",
+              "ViewState": "AgIAABUAAAAAAAAAAAAAACAAAAAYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
               "WhenOpened": "2025-11-16T08:44:23.941Z",
               "EditorCaption": ""
@@ -61,7 +61,7 @@
               "RelativeDocumentMoniker": "GameLogic.cpp",
               "ToolTip": "C:\\Users\\mdk73\\OneDrive\\\uBB38\uC11C\\GitHub\\NGP_TermProject\\Server\\Server\\GameLogic.cpp*",
               "RelativeToolTip": "GameLogic.cpp*",
-              "ViewState": "AgIAAOgAAAAAAAAAAAAxwPIAAAAlAAAAAAAAAA==",
+              "ViewState": "AgIAAB4BAAAAAAAAAAAxwCwBAAAEAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2025-11-16T08:44:07.87Z",
               "EditorCaption": ""
@@ -76,8 +76,7 @@
               "RelativeToolTip": "Server.cpp",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABMBAAAeAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2025-11-08T12:33:41.868Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-08T12:33:41.868Z"
             }
           ]
         }

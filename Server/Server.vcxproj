@@ -126,6 +126,7 @@
   <ItemGroup>
     <ClCompile Include="GameLogic.cpp" />
     <ClCompile Include="Server.cpp" />
+    <ClCompile Include="Server_Map.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameLogic.h" />

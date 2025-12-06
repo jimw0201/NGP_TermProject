@@ -296,7 +296,11 @@ void Server_CheckAllCollisions() {
                 }
             }
         }
+    if (isColliding == true) {
+      printf("Collision!!");
     }
+    }
+    
 }
 
 bool Server_CheckGameOver() {
