@@ -90,6 +90,10 @@ struct ClientInfo {
 	// Rising-Edge용 직전에 키 눌렸는지 확인하는 변수
 	bool Q_PrevServerState = false;
 	bool E_PrevServerState = false;
+
+	float prev_car_dx = 0.0f;
+	float prev_car_dz = 0.0f;
+	float prev_car_rotateY = 0.0f;
 };
 
 // 서버 -> 클라 PlayerId전송해주는 패킷

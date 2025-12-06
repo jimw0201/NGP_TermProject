@@ -67,6 +67,11 @@ void Server_movement(int PlayerID) {
     // 핸들 값을 실제 바퀴 각도로 변환
     data.front_wheels_rotateY = (keys.handle_rotate_z / HANDLE_MAX_ROTATION) * WHEEL_MAX_ROTATION;
 
+    // 기존 위치 저장
+    g_clients[PlayerID].prev_car_dx = data.car_dx;
+    g_clients[PlayerID].prev_car_dz = data.car_dz;
+    g_clients[PlayerID].prev_car_rotateY = data.car_rotateY;
+
 
     // 기어 P 혹은 중립이면 움직이지 않음
     if (data.currentGear == PARK || data.currentGear == NEUTRAL) {
@@ -386,6 +391,11 @@ void Server_CheckAllCollisions() {
         // 5. 충돌 공통 후처리 (나중에 충돌 페널티 넣을 자리)
         if (isColliding)
         {
+            // 기존 위치 불러오기
+            player.car_dx = g_clients[i].prev_car_dx;
+            player.car_dz = g_clients[i].prev_car_dz;
+            player.car_rotateY = g_clients[i].prev_car_rotateY;
+
             stats.CollisionCount++;
             player.car_speed = 0.0f;
         }
