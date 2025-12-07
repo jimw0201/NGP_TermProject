@@ -1,0 +1,345 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\network_client.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|solutionrelative:network_client.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\car.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|solutionrelative:car.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\game_state.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|solutionrelative:game_state.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\car.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|solutionrelative:car.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|solutionrelative:main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\renderer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|solutionrelative:renderer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\Protocol.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|solutionrelative:Protocol.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\game_state.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|solutionrelative:game_state.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\network_client.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|solutionrelative:network_client.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\input_handle.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|solutionrelative:input_handle.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\environment.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|solutionrelative:environment.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\mesh.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|solutionrelative:mesh.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\mesh.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|solutionrelative:mesh.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\environment.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|solutionrelative:environment.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\input_handle.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|solutionrelative:input_handle.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\shader.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|solutionrelative:shader.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\shader.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|solutionrelative:shader.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\collision.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|solutionrelative:collision.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\renderer.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|solutionrelative:renderer.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\collision.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6E60317B-8A24-413D-A97B-857728EFB192}|CG_project.vcxproj|solutionrelative:collision.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 3,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "car.h",
+              "DocumentMoniker": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\car.h",
+              "RelativeDocumentMoniker": "car.h",
+              "ToolTip": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\car.h",
+              "RelativeToolTip": "car.h",
+              "ViewState": "AgIAAAcAAAAAAAAAAAAUwCAAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-12-01T15:57:39.145Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "car.cpp",
+              "DocumentMoniker": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\car.cpp",
+              "RelativeDocumentMoniker": "car.cpp",
+              "ToolTip": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\car.cpp",
+              "RelativeToolTip": "car.cpp",
+              "ViewState": "AgIAAD0BAAAAAAAAAAArwFoBAAAzAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-12-07T02:48:05.327Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "network_client.cpp",
+              "DocumentMoniker": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\network_client.cpp",
+              "RelativeDocumentMoniker": "network_client.cpp",
+              "ToolTip": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\network_client.cpp",
+              "RelativeToolTip": "network_client.cpp",
+              "ViewState": "AgIAAFIAAAAAAAAAAAAUwGYAAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-12-01T15:13:09.255Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "game_state.cpp",
+              "DocumentMoniker": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\game_state.cpp",
+              "RelativeDocumentMoniker": "game_state.cpp",
+              "ToolTip": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\game_state.cpp",
+              "RelativeToolTip": "game_state.cpp",
+              "ViewState": "AgIAAHEAAAAAAAAAAAAlwJIAAAAxAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-12-01T15:50:39.065Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "main.cpp",
+              "DocumentMoniker": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\main.cpp",
+              "RelativeDocumentMoniker": "main.cpp",
+              "ToolTip": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\main.cpp",
+              "RelativeToolTip": "main.cpp",
+              "ViewState": "AgIAAC8AAAAAAAAAAAAiwEgAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-12-01T15:12:48.317Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "game_state.h",
+              "DocumentMoniker": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\game_state.h",
+              "RelativeDocumentMoniker": "game_state.h",
+              "ToolTip": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\game_state.h",
+              "RelativeToolTip": "game_state.h",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAAABcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-12-01T15:51:36.297Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "Protocol.h",
+              "DocumentMoniker": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\Protocol.h",
+              "RelativeDocumentMoniker": "Protocol.h",
+              "ToolTip": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\Protocol.h",
+              "RelativeToolTip": "Protocol.h",
+              "ViewState": "AgIAAEQAAAAAAAAAAAAlwGMAAAAPAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-12-01T15:56:45.315Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "renderer.cpp",
+              "DocumentMoniker": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\renderer.cpp",
+              "RelativeDocumentMoniker": "renderer.cpp",
+              "ToolTip": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\renderer.cpp",
+              "RelativeToolTip": "renderer.cpp",
+              "ViewState": "AgIAAIQCAAAAAAAAAAAAAJkCAAAvAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-12-01T15:47:59.319Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "network_client.h",
+              "DocumentMoniker": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\network_client.h",
+              "RelativeDocumentMoniker": "network_client.h",
+              "ToolTip": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\network_client.h",
+              "RelativeToolTip": "network_client.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-12-01T15:56:34.356Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "input_handle.cpp",
+              "DocumentMoniker": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\input_handle.cpp",
+              "RelativeDocumentMoniker": "input_handle.cpp",
+              "ToolTip": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\input_handle.cpp",
+              "RelativeToolTip": "input_handle.cpp",
+              "ViewState": "AgIAAK8AAAAAAAAAAAAlwNkAAAAuAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-12-01T15:54:22.14Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "environment.cpp",
+              "DocumentMoniker": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\environment.cpp",
+              "RelativeDocumentMoniker": "environment.cpp",
+              "ToolTip": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\environment.cpp",
+              "RelativeToolTip": "environment.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-12-07T02:48:08.479Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "mesh.cpp",
+              "DocumentMoniker": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\mesh.cpp",
+              "RelativeDocumentMoniker": "mesh.cpp",
+              "ToolTip": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\mesh.cpp",
+              "RelativeToolTip": "mesh.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-12-07T02:47:15.304Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "mesh.h",
+              "DocumentMoniker": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\mesh.h",
+              "RelativeDocumentMoniker": "mesh.h",
+              "ToolTip": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\mesh.h",
+              "RelativeToolTip": "mesh.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAiAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-12-07T02:48:43.466Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "environment.h",
+              "DocumentMoniker": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\environment.h",
+              "RelativeDocumentMoniker": "environment.h",
+              "ToolTip": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\environment.h",
+              "RelativeToolTip": "environment.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-12-07T02:48:54.986Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "input_handle.h",
+              "DocumentMoniker": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\input_handle.h",
+              "RelativeDocumentMoniker": "input_handle.h",
+              "ToolTip": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\input_handle.h",
+              "RelativeToolTip": "input_handle.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-12-07T02:48:58.461Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "shader.h",
+              "DocumentMoniker": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\shader.h",
+              "RelativeDocumentMoniker": "shader.h",
+              "ToolTip": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\shader.h",
+              "RelativeToolTip": "shader.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-12-07T02:48:46.606Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "shader.cpp",
+              "DocumentMoniker": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\shader.cpp",
+              "RelativeDocumentMoniker": "shader.cpp",
+              "ToolTip": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\shader.cpp",
+              "RelativeToolTip": "shader.cpp",
+              "ViewState": "AgIAADkAAAAAAAAAAAAAAAsAAAAoAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-12-07T02:47:54.615Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "collision.h",
+              "DocumentMoniker": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\collision.h",
+              "RelativeDocumentMoniker": "collision.h",
+              "ToolTip": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\collision.h",
+              "RelativeToolTip": "collision.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-12-07T02:48:57.503Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "renderer.h",
+              "DocumentMoniker": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\renderer.h",
+              "RelativeDocumentMoniker": "renderer.h",
+              "ToolTip": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\renderer.h",
+              "RelativeToolTip": "renderer.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-12-07T02:48:45.667Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "collision.cpp",
+              "DocumentMoniker": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\collision.cpp",
+              "RelativeDocumentMoniker": "collision.cpp",
+              "ToolTip": "C:\\Users\\hrin2\\Downloads\\NGP_TermProject-JMW (1)\\NGP_TermProject-JMW\\Game\\CG_project\\collision.cpp",
+              "RelativeToolTip": "collision.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-12-07T02:48:11.531Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
