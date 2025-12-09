@@ -206,6 +206,11 @@ void GameState_TimerLoop(int value)
         // (4) 차량 이동 + 충돌 처리(벽, 장애물, 다른 차량)
         for (int i = 0; i < Car_Count(); ++i)
         {
+            if (i == 0 && GameState_IsParked()) {
+                Car_SetSpeed(i, 0.0f);
+                continue;
+            }
+
             if (Car_GetSpeed(i) == 0.0f) continue;
 
             float radians = glm::radians(Car_GetRotationY(i));

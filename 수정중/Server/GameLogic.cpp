@@ -59,6 +59,11 @@ void Server_movement(int PlayerID) {
     PlayerGameStats& stats = g_clients[PlayerID].playerStats;
     float& car_speed = data.car_speed;
 
+    // 주차에 성공했다면 더 이상 움직이거나 기어를 바꿀 수 없음
+    if (stats.IsParked) {
+        car_speed = 0.0f; // 강제 정지
+        return;           // 함수 종료 (이동/기어 로직 수행 안 함)
+    }
 
     // 기어 변속 처리를 위한 이전 프레임 키 상태 참조
     bool& q_prev = g_clients[PlayerID].Q_PrevServerState;

@@ -135,7 +135,7 @@ void Keyboard(unsigned char key, int x, int y)
         }
     }
 
-    if (!GameState_IsPaused())
+    if (!GameState_IsPaused() && !GameState_IsParked())
     {
         switch (key)
         {
