@@ -155,14 +155,14 @@ static void GameState_ApplyServerState(const S2C_GameStateUpdatePacket& pkt)
 
 void GameState_TimerLoop(int value)
 {
-    time_t currentTime = time(nullptr);
-
-    // 일시정지가 아닐 때만 경과 시간 갱신
-    if (!GameState_IsPaused())
-    {
-        GameState_SetElapsedSeconds(
-            static_cast<int>(currentTime - GameState_GetPauseTime() - GameState_GetStartTime()));
-    }
+    //time_t currentTime = time(nullptr);
+    //
+    //// 일시정지가 아닐 때만 경과 시간 갱신
+    //if (!GameState_IsPaused())
+    //{
+    //    GameState_SetElapsedSeconds(
+    //        static_cast<int>(currentTime - GameState_GetPauseTime() - GameState_GetStartTime()));
+    //}
 
     // 네트워크 연결되어 있으면 서버로 내 입력 전송
     if (g_connected)
