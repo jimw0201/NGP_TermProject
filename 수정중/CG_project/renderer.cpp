@@ -605,6 +605,67 @@ void DrawConnectingUI(int miniWidth, int miniHeight)
 }
 
 
+// [함수 추가] 스테이지 클리어 UI 그리기
+void DrawStageClearUI(int w, int h)
+{
+	glUseProgram(0); // 쉐이더 끄기
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	gluOrtho2D(0, w, 0, h);
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	// 1. 반투명 검은 배경
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glColor4f(0.0f, 0.0f, 0.0f, 0.7f);
+	glBegin(GL_QUADS);
+	glVertex2f(0, 0);
+	glVertex2f(w, 0);
+	glVertex2f(w, h);
+	glVertex2f(0, h);
+	glEnd();
+	glDisable(GL_BLEND);
+
+	// 2. 텍스트 표시 "STAGE CLEAR!"
+	float centerX = w / 2.0f;
+	float centerY = h / 2.0f;
+
+	glColor3f(1.0f, 1.0f, 0.0f); // 노란색
+	std::string msg = "STAGE CLEAR!";
+
+	// 텍스트 길이 대략 계산해서 중앙 정렬
+	int textWidth = BitmapStringWidth(GLUT_BITMAP_TIMES_ROMAN_24, msg);
+
+	glPushMatrix();
+	glTranslatef(centerX - (textWidth / 2), centerY, 0.0f);
+	// 폰트 크기 키우기 위해 스케일링하거나 큰 폰트 사용
+	// GLUT 비트맵 폰트는 스케일링이 안되므로 TIMES_ROMAN_24 사용
+	RenderBitmapString(0, 0, GLUT_BITMAP_TIMES_ROMAN_24, msg.c_str());
+	glPopMatrix();
+
+	// 3. 안내 문구
+	glColor3f(1.0f, 1.0f, 1.0f);
+	std::string subMsg = "Moving to Next Stage...";
+	int subWidth = BitmapStringWidth(GLUT_BITMAP_HELVETICA_18, subMsg);
+
+	glPushMatrix();
+	glTranslatef(centerX - (subWidth / 2), centerY - 40, 0.0f);
+	RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, subMsg.c_str());
+	glPopMatrix();
+
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+
+	glUseProgram(shaderProgramID); // 쉐이더 복구
+}
+
 // 메인 그리기 함수
 void drawScene()
 {
@@ -1004,6 +1065,9 @@ void drawScene()
 			glMatrixMode(GL_MODELVIEW);
 			glUseProgram(shaderProgramID);
 		}
+		if (GameState_IsShowClearUI()) {
+			DrawStageClearUI(width/2, height/2);
+		}
 	}
 	glutSwapBuffers();
 }
@@ -1014,3 +1078,4 @@ void Reshape(int w, int h)
 	height = h;
 	glViewport(0, 0, w, h);
 }
+

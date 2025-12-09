@@ -77,4 +77,7 @@ const CarInput& GameState_GetCarInput(int idx); // 특정 차량 입력 참조
 bool GameState_IsEnterParking();
 void GameState_SetEnterParking(bool isEnter);
 
+bool GameState_IsShowClearUI();
+void GameState_SetShowClearUI(bool show);
+
 #endif

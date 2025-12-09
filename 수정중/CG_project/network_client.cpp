@@ -113,6 +113,11 @@ DWORD WINAPI Network_Init(LPVOID lpParam)
 
             break;
         }
+        case S2C_StageClear: {
+            // [추가] 스테이지 클리어 패킷 수신 시 UI 표시 설정
+            GameState_SetShowClearUI(true);
+            break;
+        }
         case S2C_GameStateUpdate: {
             S2C_GameStateUpdatePacket pkt{};
 
@@ -133,6 +138,11 @@ DWORD WINAPI Network_Init(LPVOID lpParam)
             EnterCriticalSection(&cs);
             g_latestState = pkt;
             g_hasLatestState = true;
+
+            if (pkt.currentStage != GameState_GetCurrentStage()) {
+                // 만약 클리어 UI가 켜져있었다면 끄기 (다음 스테이지 시작)
+                GameState_SetShowClearUI(false);
+            }
             LeaveCriticalSection(&cs);
             break;
         }

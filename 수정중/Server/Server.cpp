@@ -16,6 +16,9 @@
 
 const int MAX_STAGE = 3;
 
+bool g_isStageClearDelay = false;   // 클리어 대기 상태인가?
+DWORD g_stageClearStartTime = 0;    // 대기 시작 시간
+
 
 // 3라운드 시작 위치
 const float g_round1_StartPos[MAX_PLAYERS][3] = {
@@ -113,6 +116,7 @@ unsigned int WINAPI Server_GameLoop(LPVOID arg) {
     S2C_GameStateUpdatePacket updatePkt;
 
     while (true) {
+        // 1. 게임 시작 전 대기 (4명 접속 체크)
         if (!g_IsGameRunning) {
             if (g_connectedClients == MAX_PLAYERS) {
                 printf("[Game] 4명 접속 완료. 게임을 시작합니다.\n");
@@ -122,6 +126,7 @@ unsigned int WINAPI Server_GameLoop(LPVOID arg) {
 
                 g_GameStartTime = GetTickCount();
                 g_IsGameRunning = true;
+                g_isStageClearDelay = false; // 초기화
 
                 // 게임 시작 패킷 전송
                 for (int i = 0; i < MAX_PLAYERS; ++i) {
@@ -149,77 +154,115 @@ unsigned int WINAPI Server_GameLoop(LPVOID arg) {
             continue;
         }
 
+        // 2. 게임 루프 시작
         DWORD frameStartTime = GetTickCount();
 
         EnterCriticalSection(&g_cs);
         {
-            for (int i = 0; i < MAX_PLAYERS; i++) {
-                if (g_clients[i].IsConnected) {
-                    Server_movement(i);     // 물리 연산
-                }
-            }
-
-            Server_CheckAllCollisions();    // 충돌 판정
-
-            for (int i = 0; i < MAX_PLAYERS; ++i)
+            // [A] 스테이지 클리어 대기 상태일 때 (3초 카운트)
+            if (g_isStageClearDelay)
             {
-                if (!g_clients[i].IsConnected) continue;
-                Server_UpdateParkingState(i, updatePkt.srvElapsedSec);
-            }
-
-            if (Server_CheckGameOver())
-            {
-                g_CurrentStage++;
-
-                Server_LoadMap(g_CurrentStage);
-
-                const float INITIAL_CAR_Y = 0.125f;
-                const float (*startPos)[3] = nullptr;
-
-                if (g_CurrentStage == 1) startPos = g_round1_StartPos;
-                else if (g_CurrentStage == 2) startPos = g_round2_StartPos;
-                else startPos = g_round3_StartPos;
-
-                for (int i = 0; i < MAX_PLAYERS; ++i)
+                // 3초(3000ms)가 지났는지 확인
+                if (GetTickCount() - g_stageClearStartTime > 3000)
                 {
-                    if (!g_clients[i].IsConnected)   continue;
+                    // 다음 스테이지로 넘어가기
+                    g_CurrentStage++;
+                    if (g_CurrentStage > MAX_STAGE) g_CurrentStage = 1; // 3스테이지 넘어가면 다시 1로 (혹은 종료)
 
-                    PlayerGameStats& st = g_clients[i].playerStats;
-                    st.IsParked = false;
-                    st.IsEnterParking = false;
-                    st.ParkingSec = 0.0f;
-                    st.CollisionCount = 0;
+                    // 맵 로드
+                    Server_LoadMap(g_CurrentStage);
 
-                    ClientInfo& c = g_clients[i];
+                    // 시작 위치 포인터 설정
+                    const float INITIAL_CAR_Y = 0.125f;
+                    const float(*startPos)[3] = nullptr;
 
-                    c.playerData.car_dx = startPos[i][0];
-                    c.playerData.car_dy = INITIAL_CAR_Y;
-                    c.playerData.car_dz = startPos[i][1];
-                    c.playerData.car_rotateY = startPos[i][2];
+                    if (g_CurrentStage == 1) startPos = g_round1_StartPos;
+                    else if (g_CurrentStage == 2) startPos = g_round2_StartPos;
+                    else startPos = g_round3_StartPos;
 
-                    c.playerData.car_speed = 0.0f;
-                    c.playerData.front_wheels_rotateY = 0.0f;
-                    c.playerData.wheel_rect_rotateX = 0.0f;
-                    c.playerData.currentGear = GearState::DRIVE;
+                    // 모든 플레이어 상태 리셋
+                    for (int i = 0; i < MAX_PLAYERS; ++i)
+                    {
+                        if (!g_clients[i].IsConnected) continue;
 
-                    c.playerStats.CollisionCount = 0;
-                    c.playerStats.ParkingSec = 0.0f;
-                    c.playerStats.IsParked = false;
-                    c.playerStats.IsEnterParking = false;
+                        ClientInfo& c = g_clients[i];
+                        PlayerGameStats& st = c.playerStats;
 
-                    c.Q_PrevServerState = false;
-                    c.E_PrevServerState = false;
+                        // 위치 리셋
+                        c.playerData.car_dx = startPos[i][0];
+                        c.playerData.car_dy = INITIAL_CAR_Y;
+                        c.playerData.car_dz = startPos[i][1];
+                        c.playerData.car_rotateY = startPos[i][2];
+
+                        // 물리/기어 리셋
+                        c.playerData.car_speed = 0.0f;
+                        c.playerData.front_wheels_rotateY = 0.0f;
+                        c.playerData.wheel_rect_rotateX = 0.0f;
+                        c.playerData.currentGear = GearState::DRIVE;
+
+                        // 통계/상태 리셋
+                        st.CollisionCount = 0;
+                        st.ParkingSec = 0.0f;
+                        st.IsParked = false;
+                        st.IsEnterParking = false;
+
+                        // 입력 상태 리셋
+                        c.Q_PrevServerState = false;
+                        c.E_PrevServerState = false;
+
+                        // 이전 위치값도 현재 위치로 초기화 (충돌 튕김 방지)
+                        c.prev_car_dx = c.playerData.car_dx;
+                        c.prev_car_dz = c.playerData.car_dz;
+                        c.prev_car_rotateY = c.playerData.car_rotateY;
+                    }
+
+                    g_GameStartTime = GetTickCount(); // 게임 시간 초기화
+                    g_isStageClearDelay = false;      // 대기 모드 해제
+                    printf("[Game] 스테이지 %d 시작!\n", g_CurrentStage);
                 }
-
-
-                g_GameStartTime = GetTickCount();
             }
+            // [B] 일반 게임 진행 상태일 때
             else
             {
-                // EndMatch 여기 넣으면 됩니다
+                // 1. 물리 이동 연산
+                for (int i = 0; i < MAX_PLAYERS; i++) {
+                    if (g_clients[i].IsConnected) {
+                        Server_movement(i);
+                    }
+                }
+
+                // 2. 충돌 판정
+                Server_CheckAllCollisions();
+
+                // 3. 주차 상태 업데이트
+                for (int i = 0; i < MAX_PLAYERS; ++i) {
+                    if (!g_clients[i].IsConnected) continue;
+                    Server_UpdateParkingState(i, updatePkt.srvElapsedSec);
+                }
+
+                // 4. 게임 종료(모두 주차) 체크
+                if (Server_CheckGameOver())
+                {
+                    // 대기 모드 진입
+                    g_isStageClearDelay = true;
+                    g_stageClearStartTime = GetTickCount();
+
+                    printf("[Game] 스테이지 %d 클리어! 3초 대기 후 다음 스테이지로 이동...\n", g_CurrentStage);
+
+                    // "스테이지 클리어" 패킷 전송 (S2C_StageClearPacket)
+                    S2C_StageClearPacket clearPkt;
+                    for (int i = 0; i < MAX_PLAYERS; i++) {
+                        if (g_clients[i].IsConnected) {
+                            send(g_clients[i].TCPSocket, (char*)&clearPkt, sizeof(clearPkt), 0);
+                        }
+                    }
+                }
             }
 
+            // [공통] 상태 업데이트 패킷 준비
             updatePkt.srvElapsedSec = (GetTickCount() - g_GameStartTime) / 1000;
+            updatePkt.currentStage = g_CurrentStage; // 클라이언트 UI 제어용
+
             for (int i = 0; i < MAX_PLAYERS; i++) {
                 updatePkt.playerData[i] = g_clients[i].playerData;
                 updatePkt.PlayerStats[i] = g_clients[i].playerStats;
@@ -227,8 +270,7 @@ unsigned int WINAPI Server_GameLoop(LPVOID arg) {
         }
         LeaveCriticalSection(&g_cs);
 
-        
-        // UDP 대신 TCP로 상태 브로드캐스트
+        // [공통] 상태 패킷 브로드캐스팅 (TCP)
         for (int i = 0; i < MAX_PLAYERS; i++) {
             if (!g_clients[i].IsConnected) continue;
 
@@ -250,6 +292,7 @@ unsigned int WINAPI Server_GameLoop(LPVOID arg) {
             }
         }
 
+        // 프레임 레이트 조절
         DWORD frameTime = GetTickCount() - frameStartTime;
         if (frameTime < TIMER_VELOCITY) {
             Sleep(TIMER_VELOCITY - frameTime);

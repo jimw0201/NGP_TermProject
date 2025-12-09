@@ -27,8 +27,13 @@ static bool isClear = false;
 
 static bool isEnterParking = false;
 
+static bool g_showClearUI = false;
+
 bool GameState_IsEnterParking() { return isEnterParking; }
 void GameState_SetEnterParking(bool isEnter) { isEnterParking = isEnter; }
+
+bool GameState_IsShowClearUI() { return g_showClearUI; }
+void GameState_SetShowClearUI(bool show) { g_showClearUI = show; }
 
 // 각 차량의 현재 입력 상태 (멀티 대비용)
 static CarInput g_carInputs[kCarCount];
@@ -50,6 +55,8 @@ void GameState_Init()
     isClear = false;
 
     isEnterParking = false;
+
+    g_showClearUI = false;
 }
 
 void GameState_NextStage()
@@ -155,6 +162,14 @@ static void GameState_ApplyServerState(const S2C_GameStateUpdatePacket& pkt)
         GameState_SetParked(stats.IsParked);
 
         GameState_SetEnterParking(stats.IsEnterParking);
+    }
+
+    if (current_stage != pkt.currentStage) {
+        GameState_SetCurrentStage(pkt.currentStage);
+        
+        Environment_SetupStage(pkt.currentStage);
+
+        Input_ResetHandle();
     }
 }
 

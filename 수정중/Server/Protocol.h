@@ -51,6 +51,7 @@ enum PacketType : uint8_t {
 	C2S_ReportParked,
 	C2S_GameReady,
 	S2C_PlayerIdResponse,
+	S2C_StageClear,
 };
 
 // 클라 방향키 전송 패킷
@@ -68,6 +69,7 @@ struct  S2C_GameStartPacket {
 struct S2C_GameStateUpdatePacket {
 	PacketType type = S2C_GameStateUpdate;
 	int srvElapsedSec;
+	int currentStage;
 	PlayerData playerData[MAX_PLAYERS];
 	PlayerGameStats PlayerStats[MAX_PLAYERS];
 };
@@ -100,6 +102,10 @@ struct ClientInfo {
 struct S2C_PlayerIdResponsePacket {
 	PacketType type = S2C_PlayerIdResponse;
 	int PlayerID;
+};
+
+struct S2C_StageClearPacket {
+	PacketType type = S2C_StageClear;
 };
 
 #endif
