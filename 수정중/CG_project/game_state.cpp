@@ -162,6 +162,7 @@ static void GameState_ApplyServerState(const S2C_GameStateUpdatePacket& pkt)
         GameState_SetParked(stats.IsParked);
 
         GameState_SetEnterParking(stats.IsEnterParking);
+        GameState_SetCurrentGear(pkt.playerData[myId].currentGear);
     }
 
     if (current_stage != pkt.currentStage) {

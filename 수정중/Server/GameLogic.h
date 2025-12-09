@@ -6,7 +6,7 @@
 #include <algorithm>
 #include "Protocol.h"
 
-#define MAX_SPEED 0.01f
+#define MAX_SPEED 0.1f
 #define ACCELERATION 0.001f
 #define DECELERATION 0.002f
 #define FRICTION 0.001f
