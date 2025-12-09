@@ -1066,7 +1066,8 @@ void drawScene()
 			glUseProgram(shaderProgramID);
 		}
 		if (GameState_IsShowClearUI()) {
-			DrawStageClearUI(width/2, height/2);
+			glViewport(0, 0, width, height);
+			DrawStageClearUI(width, height);
 		}
 	}
 	glutSwapBuffers();
