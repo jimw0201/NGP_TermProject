@@ -51,7 +51,7 @@ bool GameState_IsParked();
 bool GameState_IsInvincible();			
 bool GameState_IsCrushed();				
 int  GameState_GetCurrentStage();		
-int  GameState_GetElapsedSeconds();		
+int  GameState_GetElapsedSeconds();
 GearState GameState_GetCurrentGear();	
 time_t GameState_GetStartTime();		
 time_t GameState_GetPauseTime();
@@ -74,5 +74,7 @@ void GameState_UpdateTempTime(time_t time);
 CarInput* GameState_GetCarInputs();       // 전체 배열 포인터
 const CarInput& GameState_GetCarInput(int idx); // 특정 차량 입력 참조
 
+bool GameState_IsEnterParking();
+void GameState_SetEnterParking(bool isEnter);
 
 #endif

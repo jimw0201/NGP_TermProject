@@ -425,7 +425,6 @@ static bool IsCarInsideParkingArea(const ParkingArea& area, const PlayerData& da
 
 void Server_UpdateParkingState(int playerID, int srvElapsedSec)
 {
-    // PlayerID 유효 체크
     if (playerID < 0 || playerID >= MAX_PLAYERS) return;
 
     ClientInfo& client = g_clients[playerID];
@@ -434,43 +433,31 @@ void Server_UpdateParkingState(int playerID, int srvElapsedSec)
     PlayerData& data = client.playerData;
     PlayerGameStats& stats = client.playerStats;
 
-    // 이미 주차 완료된 놈은 검증 스킵
-    if (stats.IsParked) return;
-
-    // 기어 P 아니면 주차 안 한 거
-    if (data.currentGear != GearState::PARK)
-    {
-        stats.IsEnterParking = false;
+    // 이미 주차 완료된 경우에도 색상은 유지되어야 하므로 IsEnterParking은 true
+    if (stats.IsParked) {
+        stats.IsEnterParking = true;
         return;
     }
 
-    // 각 플레이어한테 할당된 주차 구역 인덱스
     int parkingIdx = kPlayerToParkingIndex[playerID];
-
-    // 플레이어 수 < 주차장 수 예외 보호
     if (parkingIdx < 0 || parkingIdx >= PARKING_COUNT) return;
 
     const ParkingArea& myArea = g_parkingAreas[parkingIdx];
 
-    // 자기 주차 구역 안에 차가 완전히 들어왔는가 검사
+    // 1. 기어와 상관없이 위치 판정 먼저 수행
     bool insideMyArea = IsCarInsideParkingArea(myArea, data);
 
-    if (!insideMyArea)
+    // 2. 진입 상태 업데이트 (이 값이 클라이언트로 가서 주차선 색을 바꿈)
+    stats.IsEnterParking = insideMyArea;
+
+    // 3. 주차 성공 판정 (위치 정확 + 기어 P)
+    if (insideMyArea && data.currentGear == GearState::PARK)
     {
-        // 아직 주차 구역에 완전히 안 들어옴
-        stats.IsEnterParking = false;
-        return;
+        stats.IsParked = true;
+        stats.ParkingSec = static_cast<float>(srvElapsedSec);
+        data.car_speed = 0.0f;
+        printf("[서버] 플레이어 %d 주차 완료 (%.1f초)\n", playerID, stats.ParkingSec);
     }
-
-    // 예외들 처리했으니 주차 판정
-    stats.IsEnterParking = true;
-    stats.IsParked = true;
-    stats.ParkingSec = static_cast<float>(srvElapsedSec);
-
-    //잔여 속도 제거
-    data.car_speed = 0.0f;
-
-    printf("[서버] 플레이어 %d 주차 완료 (%.1f초)\n", playerID, stats.ParkingSec);
 }
 
 bool Server_CheckGameOver() 

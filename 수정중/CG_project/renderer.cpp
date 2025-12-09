@@ -344,9 +344,9 @@ static void drawFinishRect(int modelLoc)
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetFinishRectMatrix(i)));
 
 		// 주차장 색상 지정
-		if (GameState_IsParked())
+		if (GameState_IsEnterParking())
 		{
-			// 주차 성공 시 초록색으로 표시
+			// 주차 공간 진입 시 초록색으로 표시
 			glUniform3f(objColorLocation, 0.0f, 1.0f, 0.0f);
 		}
 		else

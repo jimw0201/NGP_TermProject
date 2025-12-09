@@ -25,6 +25,11 @@ static int current_stage = 1;
 static bool pause_mode = false;
 static bool isClear = false;
 
+static bool isEnterParking = false;
+
+bool GameState_IsEnterParking() { return isEnterParking; }
+void GameState_SetEnterParking(bool isEnter) { isEnterParking = isEnter; }
+
 // 각 차량의 현재 입력 상태 (멀티 대비용)
 static CarInput g_carInputs[kCarCount];
 
@@ -43,6 +48,8 @@ void GameState_Init()
     current_stage = 1;
     pause_mode = false;
     isClear = false;
+
+    isEnterParking = false;
 }
 
 void GameState_NextStage()
@@ -146,6 +153,8 @@ static void GameState_ApplyServerState(const S2C_GameStateUpdatePacket& pkt)
     {
         const PlayerGameStats& stats = pkt.PlayerStats[myId];
         GameState_SetParked(stats.IsParked);
+
+        GameState_SetEnterParking(stats.IsEnterParking);
     }
 }
 
