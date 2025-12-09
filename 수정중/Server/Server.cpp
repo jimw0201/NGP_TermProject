@@ -31,10 +31,10 @@ const float g_round1_StartPos[MAX_PLAYERS][3] = {
 
 const float g_round2_StartPos[MAX_PLAYERS][3] = {
     // {dx, dz, rotY}
-    {0.0f, -6.0f, 0.0f},
-    {2.0f, -6.0f, 0.0f},
-    {-2.0f, -6.0f, 0.0f},
-    {0.0f, -8.0f, 0.0f}
+    {5.0f, 3.0f, -90.0f},
+    { -5.0f, 3.0f, 90.0f },
+    {5.0f, -3.0f, -90.0f},
+    { -5.0f, -3.0f, 90.0f }
 };
 
 const float g_round3_StartPos[MAX_PLAYERS][3] = {
