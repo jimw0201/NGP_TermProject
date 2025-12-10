@@ -59,6 +59,11 @@ void Server_movement(int PlayerID) {
     PlayerGameStats& stats = g_clients[PlayerID].playerStats;
     float& car_speed = data.car_speed;
 
+    // 주차에 성공했다면 더 이상 움직이거나 기어를 바꿀 수 없음
+    if (stats.IsParked) {
+        car_speed = 0.0f; // 강제 정지
+        return;           // 함수 종료 (이동/기어 로직 수행 안 함)
+    }
 
     // 기어 변속 처리를 위한 이전 프레임 키 상태 참조
     bool& q_prev = g_clients[PlayerID].Q_PrevServerState;
@@ -232,6 +237,7 @@ static bool checkCollisionWalls(const std::vector<std::pair<float, float>>& carC
 
 static bool checkCollisionObstacles(const std::vector<std::pair<float, float>>& carCorners)
 {
+    const float OBSTACLE_COLLISION_MARGIN = 0.85f;
     // 스테이지 별 장애물 정보
     for (int p = 0; p < PARKING_COUNT; ++p)
     {
@@ -240,14 +246,14 @@ static bool checkCollisionObstacles(const std::vector<std::pair<float, float>>& 
             const Obstacle_Info& obs = g_obstacles[p][s];
 
             // 사용 안 하는 슬롯은 스킵
-            if (obs.scaleX <= 0.0f || obs.scaleZ <= 0.0f) continue;
+            if (obs.scaleX <= 0.0f || obs.scaleZ <= 0.0f || obs.x >= 90.0) continue;
 
             // 기본 반경
-            float halfX = OBSTACLE_WIDTH * obs.scaleX;
-            float halfZ = OBSTACLE_HEIGHT * obs.scaleZ;
+            float halfX = OBSTACLE_WIDTH * obs.scaleX * OBSTACLE_COLLISION_MARGIN;
+            float halfZ = OBSTACLE_HEIGHT * obs.scaleZ * OBSTACLE_COLLISION_MARGIN;
 
             // 90도 회전된 장애물은 X/Z 길이 뒤집기
-            if (fabsf(obs.rotYDeg) > 1.0f)
+            if (fabsf(obs.rotYDeg) > 90.0f)
             {
                 std::swap(halfX, halfZ);
             }
@@ -425,7 +431,6 @@ static bool IsCarInsideParkingArea(const ParkingArea& area, const PlayerData& da
 
 void Server_UpdateParkingState(int playerID, int srvElapsedSec)
 {
-    // PlayerID 유효 체크
     if (playerID < 0 || playerID >= MAX_PLAYERS) return;
 
     ClientInfo& client = g_clients[playerID];
@@ -434,43 +439,31 @@ void Server_UpdateParkingState(int playerID, int srvElapsedSec)
     PlayerData& data = client.playerData;
     PlayerGameStats& stats = client.playerStats;
 
-    // 이미 주차 완료된 놈은 검증 스킵
-    if (stats.IsParked) return;
-
-    // 기어 P 아니면 주차 안 한 거
-    if (data.currentGear != GearState::PARK)
-    {
-        stats.IsEnterParking = false;
+    // 이미 주차 완료된 경우에도 색상은 유지되어야 하므로 IsEnterParking은 true
+    if (stats.IsParked) {
+        stats.IsEnterParking = true;
         return;
     }
 
-    // 각 플레이어한테 할당된 주차 구역 인덱스
     int parkingIdx = kPlayerToParkingIndex[playerID];
-
-    // 플레이어 수 < 주차장 수 예외 보호
     if (parkingIdx < 0 || parkingIdx >= PARKING_COUNT) return;
 
     const ParkingArea& myArea = g_parkingAreas[parkingIdx];
 
-    // 자기 주차 구역 안에 차가 완전히 들어왔는가 검사
+    // 1. 기어와 상관없이 위치 판정 먼저 수행
     bool insideMyArea = IsCarInsideParkingArea(myArea, data);
 
-    if (!insideMyArea)
+    // 2. 진입 상태 업데이트 (이 값이 클라이언트로 가서 주차선 색을 바꿈)
+    stats.IsEnterParking = insideMyArea;
+
+    // 3. 주차 성공 판정 (위치 정확 + 기어 P)
+    if (insideMyArea && data.currentGear == GearState::PARK)
     {
-        // 아직 주차 구역에 완전히 안 들어옴
-        stats.IsEnterParking = false;
-        return;
+        stats.IsParked = true;
+        stats.ParkingSec = static_cast<float>(srvElapsedSec);
+        data.car_speed = 0.0f;
+        printf("[서버] 플레이어 %d 주차 완료 (%.1f초)\n", playerID, stats.ParkingSec);
     }
-
-    // 예외들 처리했으니 주차 판정
-    stats.IsEnterParking = true;
-    stats.IsParked = true;
-    stats.ParkingSec = static_cast<float>(srvElapsedSec);
-
-    //잔여 속도 제거
-    data.car_speed = 0.0f;
-
-    printf("[서버] 플레이어 %d 주차 완료 (%.1f초)\n", playerID, stats.ParkingSec);
 }
 
 bool Server_CheckGameOver() 
