@@ -237,7 +237,7 @@ static bool checkCollisionWalls(const std::vector<std::pair<float, float>>& carC
 
 static bool checkCollisionObstacles(const std::vector<std::pair<float, float>>& carCorners)
 {
-    const float OBSTACLE_COLLISION_MARGIN = 0.85f;
+    const float OBSTACLE_COLLISION_MARGIN = 1.0f;
     // 스테이지 별 장애물 정보
     for (int p = 0; p < PARKING_COUNT; ++p)
     {

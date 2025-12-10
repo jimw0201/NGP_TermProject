@@ -387,15 +387,15 @@ void Server_LoadMap(int stage)
         // 거대한 벽 2개
         g_obstacles[0][0].x = 0.0f;
         g_obstacles[0][0].z = -4.5f;
-        g_obstacles[0][0].rotYDeg = 90.0f;
-        g_obstacles[0][0].scaleX = 2.0f;
-        g_obstacles[0][0].scaleZ = 6.0f;
+        g_obstacles[0][0].rotYDeg = 0.0f;
+        g_obstacles[0][0].scaleX = 10.0f;
+        g_obstacles[0][0].scaleZ = 1.0f;
 
         g_obstacles[0][1].x = 0.0f;
         g_obstacles[0][1].z = 4.5f;
-        g_obstacles[0][1].rotYDeg = 90.0f;
-        g_obstacles[0][1].scaleX = 2.0f;
-        g_obstacles[0][1].scaleZ = 6.0f;
+        g_obstacles[0][1].rotYDeg = 0.0f;
+        g_obstacles[0][1].scaleX = 10.0f;
+        g_obstacles[0][1].scaleZ = 1.0f;
     }
 
     // 전역 배열에 반영
