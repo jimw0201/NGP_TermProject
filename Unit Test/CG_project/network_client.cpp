@@ -26,7 +26,9 @@ int   recvd = 0;
 
 // S2C 수신용
 static HANDLE g_recvThreadHandle = NULL;
-static S2C_GameStateUpdatePacket g_latestState;
+S2C_GameStateUpdatePacket g_latestState;
+// StageScore g_stageScores[MAX_PLAYERS];
+EndScore g_endScores[MAX_PLAYERS];
 static volatile bool g_hasLatestState = false;
 
 unsigned __stdcall Network_RecvThread(void* arg);
@@ -70,23 +72,23 @@ DWORD WINAPI Network_Init(LPVOID lpParam)
         return false;
     }
 
-    printf("서버에 TCP 연결 성공! (%s:%d)\n", SERVERIP, SERVERPORT);
+    printf("서버에 TCP 연결 성공!\n");
     g_connected = true;
 
     while (g_connected) {
-		// 패킷 타입 먼저 수신
-		PacketType type;
-		recvd = 0;
-		while (recvd < sizeof(PacketType)) {
-			int ret = recv(g_tcpSocket, (char*)&type + recvd, sizeof(PacketType) - recvd, 0);
-			if (ret <= 0) {
-				g_connected = false;
-				return 0;
-			}
-			recvd += ret;
-		}
-		char buf[BUFSIZE];
-		// 타입별로 처리
+        // 패킷 타입 먼저 수신
+        PacketType type;
+        recvd = 0;
+        while (recvd < sizeof(PacketType)) {
+            int ret = recv(g_tcpSocket, (char*)&type + recvd, sizeof(PacketType) - recvd, 0);
+            if (ret <= 0) {
+                g_connected = false;
+                return 0;
+            }
+            recvd += ret;
+        }
+        char buf[BUFSIZE];
+        // 타입별로 처리
         switch (type) {
         case S2C_GameStart: {// S2C_GameStart 라고 가정
             GameScreen = STATE_GAME_PLAY;   // 게임 화면으로 전환
@@ -113,6 +115,12 @@ DWORD WINAPI Network_Init(LPVOID lpParam)
 
             break;
         }
+        case S2C_StageClear: {
+            // 스테이지 클리어 패킷 수신 시 UI 표시 설정
+            S2C_StageClearPacket pkt{};
+            GameState_SetShowClearUI(true);
+            break;
+        }
         case S2C_GameStateUpdate: {
             S2C_GameStateUpdatePacket pkt{};
 
@@ -133,12 +141,37 @@ DWORD WINAPI Network_Init(LPVOID lpParam)
             EnterCriticalSection(&cs);
             g_latestState = pkt;
             g_hasLatestState = true;
+
+            if (pkt.currentStage != GameState_GetCurrentStage()) {
+                // 만약 클리어 UI가 켜져있었다면 끄기 (다음 스테이지 시작)
+                GameState_SetShowClearUI(false);
+            }
             LeaveCriticalSection(&cs);
             break;
         }
-		// case S2C_GameOver:
+        case S2C_GameOver: {
+            S2C_GameOverPacket pkt{};
 
+            int bodySize = sizeof(S2C_GameOverPacket) - sizeof(PacketType);
+            char* pBody = reinterpret_cast<char*>(&pkt) + sizeof(PacketType);
+            recvd = 0;
 
+            while (recvd < bodySize) {
+                int ret = recv(g_tcpSocket, pBody + recvd, bodySize - recvd, 0);
+                if (ret <= 0) {
+                    g_connected = false;
+                    return 0;
+                }
+                recvd += ret;
+            }
+
+            for (int i = 0; i < MAX_PLAYERS; ++i) {
+                g_endScores[i] = pkt.playerEnd[i];
+            }
+
+            GameScreen = STATE_END;
+            break;
+        }
         }
     }
 

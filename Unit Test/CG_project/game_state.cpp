@@ -25,6 +25,16 @@ static int current_stage = 1;
 static bool pause_mode = false;
 static bool isClear = false;
 
+static bool isEnterParking = false;
+
+static bool g_showClearUI = false;
+
+bool GameState_IsEnterParking() { return isEnterParking; }
+void GameState_SetEnterParking(bool isEnter) { isEnterParking = isEnter; }
+
+bool GameState_IsShowClearUI() { return g_showClearUI; }
+void GameState_SetShowClearUI(bool show) { g_showClearUI = show; }
+
 // 각 차량의 현재 입력 상태 (멀티 대비용)
 static CarInput g_carInputs[kCarCount];
 
@@ -43,6 +53,10 @@ void GameState_Init()
     current_stage = 1;
     pause_mode = false;
     isClear = false;
+
+    isEnterParking = false;
+
+    g_showClearUI = false;
 }
 
 void GameState_NextStage()
@@ -146,6 +160,17 @@ static void GameState_ApplyServerState(const S2C_GameStateUpdatePacket& pkt)
     {
         const PlayerGameStats& stats = pkt.PlayerStats[myId];
         GameState_SetParked(stats.IsParked);
+
+        GameState_SetEnterParking(stats.IsEnterParking);
+        GameState_SetCurrentGear(pkt.playerData[myId].currentGear);
+    }
+
+    if (current_stage != pkt.currentStage) {
+        GameState_SetCurrentStage(pkt.currentStage);
+        
+        Environment_SetupStage(pkt.currentStage);
+
+        Input_ResetHandle();
     }
 }
 
@@ -155,14 +180,14 @@ static void GameState_ApplyServerState(const S2C_GameStateUpdatePacket& pkt)
 
 void GameState_TimerLoop(int value)
 {
-    time_t currentTime = time(nullptr);
-
-    // 일시정지가 아닐 때만 경과 시간 갱신
-    if (!GameState_IsPaused())
-    {
-        GameState_SetElapsedSeconds(
-            static_cast<int>(currentTime - GameState_GetPauseTime() - GameState_GetStartTime()));
-    }
+    //time_t currentTime = time(nullptr);
+    //
+    //// 일시정지가 아닐 때만 경과 시간 갱신
+    //if (!GameState_IsPaused())
+    //{
+    //    GameState_SetElapsedSeconds(
+    //        static_cast<int>(currentTime - GameState_GetPauseTime() - GameState_GetStartTime()));
+    //}
 
     // 네트워크 연결되어 있으면 서버로 내 입력 전송
     if (g_connected)
@@ -197,6 +222,11 @@ void GameState_TimerLoop(int value)
         // (4) 차량 이동 + 충돌 처리(벽, 장애물, 다른 차량)
         for (int i = 0; i < Car_Count(); ++i)
         {
+            if (i == 0 && GameState_IsParked()) {
+                Car_SetSpeed(i, 0.0f);
+                continue;
+            }
+
             if (Car_GetSpeed(i) == 0.0f) continue;
 
             float radians = glm::radians(Car_GetRotationY(i));

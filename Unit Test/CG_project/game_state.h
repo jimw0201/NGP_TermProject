@@ -12,7 +12,8 @@
 enum SCREENState {
     STATE_IP_INPUT,
     STATE_CONNECTING,
-    STATE_GAME_PLAY
+    STATE_GAME_PLAY,
+    STATE_END
 };
 
 extern std::string SERVERIP;
@@ -21,6 +22,9 @@ extern CRITICAL_SECTION cs;
 extern int PlayerId;
 extern int width;
 extern int height;
+// extern StageScore g_stageScores[MAX_PLAYERS];
+extern EndScore g_endScores[MAX_PLAYERS];
+extern S2C_GameStateUpdatePacket g_latestState;
 
 extern SCREENState GameScreen;
 
@@ -51,7 +55,7 @@ bool GameState_IsParked();
 bool GameState_IsInvincible();			
 bool GameState_IsCrushed();				
 int  GameState_GetCurrentStage();		
-int  GameState_GetElapsedSeconds();		
+int  GameState_GetElapsedSeconds();
 GearState GameState_GetCurrentGear();	
 time_t GameState_GetStartTime();		
 time_t GameState_GetPauseTime();
@@ -74,5 +78,10 @@ void GameState_UpdateTempTime(time_t time);
 CarInput* GameState_GetCarInputs();       // 전체 배열 포인터
 const CarInput& GameState_GetCarInput(int idx); // 특정 차량 입력 참조
 
+bool GameState_IsEnterParking();
+void GameState_SetEnterParking(bool isEnter);
+
+bool GameState_IsShowClearUI();
+void GameState_SetShowClearUI(bool show);
 
 #endif

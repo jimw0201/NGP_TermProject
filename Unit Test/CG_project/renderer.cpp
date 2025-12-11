@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "renderer.h"
 
 // 다른 모듈의 정보를 가져와서 그려야 하므로 모두 포함
@@ -344,9 +345,9 @@ static void drawFinishRect(int modelLoc)
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(Environment_GetFinishRectMatrix(i)));
 
 		// 주차장 색상 지정
-		if (GameState_IsParked())
+		if (GameState_IsEnterParking())
 		{
-			// 주차 성공 시 초록색으로 표시
+			// 주차 공간 진입 시 초록색으로 표시
 			glUniform3f(objColorLocation, 0.0f, 1.0f, 0.0f);
 		}
 		else
@@ -604,6 +605,143 @@ void DrawConnectingUI(int miniWidth, int miniHeight)
 	glUseProgram(shaderProgramID);
 }
 
+
+// 스테이지 클리어 UI 그리기
+void DrawStageClearUI(int w, int h)
+{
+	glUseProgram(0); // 쉐이더 끄기
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	gluOrtho2D(0, w, 0, h);
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	// 1. 반투명 검은 배경
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glColor4f(0.0f, 0.0f, 0.0f, 0.7f);
+	glBegin(GL_QUADS);
+	glVertex2f(0, 0);
+	glVertex2f(w, 0);
+	glVertex2f(w, h);
+	glVertex2f(0, h);
+	glEnd();
+	glDisable(GL_BLEND);
+
+	// 2. 텍스트 표시 "STAGE CLEAR!"
+	float centerX = w / 2.0f;
+	float centerY = h / 2.0f;
+
+	glColor3f(1.0f, 1.0f, 0.0f); // 노란색
+	std::string msg = "STAGE CLEAR!";
+
+	// 텍스트 길이 대략 계산해서 중앙 정렬
+	int textWidth = BitmapStringWidth(GLUT_BITMAP_TIMES_ROMAN_24, msg);
+
+	glPushMatrix();
+	glTranslatef(centerX - (textWidth / 2), centerY + 80, 0.0f);
+	// 폰트 크기 키우기 위해 스케일링하거나 큰 폰트 사용
+	// GLUT 비트맵 폰트는 스케일링이 안되므로 TIMES_ROMAN_24 사용
+	RenderBitmapString(0, 0, GLUT_BITMAP_TIMES_ROMAN_24, msg.c_str());
+	glPopMatrix();
+	/*
+	// 표 위치/크기 대충 잡기
+	float tableX = centerX - 200.0f; // 왼쪽 시작 x
+	float tableTopY = centerY + 40.0f;  // 헤더 y
+	float rowHeight = 24.0f;            // 한 줄 높이
+	void* font = GLUT_BITMAP_HELVETICA_18;
+
+	// 3. 헤더
+	glColor3f(1.0f, 1.0f, 1.0f);
+	RenderBitmapString(tableX + 80, tableTopY, font, "Rank");
+	RenderBitmapString(tableX + 0, tableTopY, font, "Player");
+	RenderBitmapString(tableX + 220, tableTopY, font, "Score");
+
+	// 라인 - 밑줄
+	glBegin(GL_LINES);
+	glVertex2f(tableX, tableTopY - 5);
+	glVertex2f(tableX + 260, tableTopY - 5);
+	glEnd();
+
+	// 각 플레이어 줄
+	for (int i = 0; i < MAX_PLAYERS; ++i) {
+		float y = tableTopY - (i + 1) * rowHeight;
+
+		// (1) Rank
+		char bufRank[16];
+		sprintf(bufRank, "%d", g_stageScores[i].rank);
+
+		// (2) Player (me 표시)
+		char bufPlayer[32];
+		if (i == PlayerId) {
+			sprintf(bufPlayer, "Player_%d (me)", i + 1);
+		}
+		else {
+			sprintf(bufPlayer, "Player_%d", i + 1);
+		}
+
+		// (3) Score
+		char bufScore[16];
+		sprintf(bufScore, "%d", g_stageScores[i].score);
+		glColor3f(1.0f, 1.0f, 1.0f); // 흰색
+
+		RenderBitmapString(tableX + 80, y, font, bufRank);
+		RenderBitmapString(tableX + 0, y, font, bufPlayer);
+		RenderBitmapString(tableX + 220, y, font, bufScore);
+	}*/
+
+	// 3. 안내 문구
+	glColor3f(1.0f, 1.0f, 1.0f);
+	std::string subMsg = "Moving to Next Stage...";
+	int subWidth = BitmapStringWidth(GLUT_BITMAP_HELVETICA_18, subMsg);
+
+	glPushMatrix();
+	glTranslatef(centerX - (subWidth / 2), centerY - 40, 0.0f);
+	RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, subMsg.c_str());
+	glPopMatrix();
+
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+
+	glUseProgram(shaderProgramID); // 쉐이더 복구
+}
+
+// 게임 화면에 충돌횟수
+void DrawHUD_Collision(int screenW, int screenH)
+{
+	glUseProgram(0);
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	gluOrtho2D(0, screenW, 0, screenH);
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	// 내 충돌 횟수 가져오기
+	if (PlayerId >= 0 && PlayerId < MAX_PLAYERS) {
+		int collision = g_latestState.PlayerStats[PlayerId].CollisionCount;
+
+		char buf[64];
+		sprintf(buf, "Collision : %d", collision);
+
+		glColor3f(1.0f, 0.2f, 0.2f);
+		RenderBitmapString(20, screenH - 80, GLUT_BITMAP_HELVETICA_18, buf);
+	}
+
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+}
 
 // 메인 그리기 함수
 void drawScene()
@@ -894,6 +1032,39 @@ void drawScene()
 		}
 		glEnable(GL_DEPTH_TEST);
 
+		if (g_latestState.PlayerStats[PlayerId].IsParked == TRUE && !GameState_IsShowClearUI()) {
+			glUseProgram(0); // UI는 고정 파이프라인으로
+
+			glMatrixMode(GL_PROJECTION);
+			glPushMatrix();
+			glLoadIdentity();
+			gluOrtho2D(0, width, 0, height);
+
+			glMatrixMode(GL_MODELVIEW);
+			glPushMatrix();
+			glLoadIdentity();
+
+			float centerX = width / 2.0f;
+			float centerY = height / 2.0f;
+
+			// 텍스트 내용
+			const char* msg = "Parking Complete!";
+
+			void* font = GLUT_BITMAP_HELVETICA_18;
+
+			int textWidth = BitmapStringWidth(font, msg);
+
+			glColor3f(1.0f, 1.0f, 1.0f); // 흰색
+			glPushMatrix();
+			RenderBitmapString(20.0f, centerY + 100.0f, font, msg);
+			glPopMatrix();
+
+			glMatrixMode(GL_PROJECTION);
+			glPopMatrix();
+			glMatrixMode(GL_MODELVIEW);
+			glPopMatrix();
+		}
+
 		if (GameState_IsPaused())
 		{
 			int miniMapWidth = width / 2;
@@ -947,55 +1118,6 @@ void drawScene()
 				RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, String.c_str());
 				glPopMatrix();
 			}
-			else // 클리어 표시
-			{
-				glColor3f(1.0f, 1.0f, 1.0f); // 흰색
-				std::string String = "stage " + std::to_string(GameState_GetCurrentStage()) + " clear!!";
-
-				glPushMatrix();
-				glTranslatef(mx - 50, my + 50, 0.0f);
-				glScalef(textScale, textScale, textScale);
-				RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, String.c_str());
-				glPopMatrix();
-
-				glColor3f(1.0f, 1.0f, 0.0f); // 노란색
-				int star_count = 1;
-				if (GameState_GetElapsedSeconds() <= 60)
-				{
-					star_count++;
-				}
-				if (!GameState_IsCrushed())
-				{
-					star_count++;
-				}
-
-				String = "your star count : " + std::to_string(star_count);
-				glPushMatrix();
-				glTranslatef(mx - 65, my, 0.0f);
-				glScalef(textScale, textScale, textScale);
-				RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, String.c_str());
-				glPopMatrix();
-
-				glColor3f(1.0f, 1.0f, 1.0f); // 흰색
-				if (GameState_GetCurrentStage() <= 2)
-				{
-					String = "Press 'n' to next stage";
-					glPushMatrix();
-					glTranslatef(mx - 80, my - 50, 0.0f);
-					glScalef(textScale, textScale, textScale);
-					RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, String.c_str());
-					glPopMatrix();
-				}
-				else
-				{
-					String = "Press 'n' to quit game";
-					glPushMatrix();
-					glTranslatef(mx - 80, my - 50, 0.0f);
-					glScalef(textScale, textScale, textScale);
-					RenderBitmapString(0, 0, GLUT_BITMAP_HELVETICA_18, String.c_str());
-					glPopMatrix();
-				}
-			}
 
 			glPopMatrix();
 			glMatrixMode(GL_PROJECTION);
@@ -1004,7 +1126,108 @@ void drawScene()
 			glMatrixMode(GL_MODELVIEW);
 			glUseProgram(shaderProgramID);
 		}
+		if (GameState_IsShowClearUI()) {
+			glDisable(GL_DEPTH_TEST);  // 2D UI 그릴 때 depth 끄기
+			glViewport(0, 0, width, height);
+			DrawStageClearUI(width, height);
+			glEnable(GL_DEPTH_TEST);   // 다시 키기
+		}
+
+		// 충돌 횟수
+		DrawHUD_Collision(width, height);
 	}
+	else if (GameScreen == STATE_END) {
+		glUseProgram(0); // 쉐이더 끄기
+
+		glDisable(GL_DEPTH_TEST);
+
+		glMatrixMode(GL_PROJECTION);
+		glPushMatrix();
+		glLoadIdentity();
+		gluOrtho2D(0, width, 0, height);
+
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		glLoadIdentity();
+
+		// 1. 반투명 검은 배경
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glColor4f(0.0f, 0.0f, 0.0f, 0.7f);
+		glBegin(GL_QUADS);
+		glVertex2f(0, 0);
+		glVertex2f(width, 0);
+		glVertex2f(width, height);
+		glVertex2f(0, height);
+		glEnd();
+		glDisable(GL_BLEND);
+
+		// 2. 텍스트 표시 "Game CLEAR!"
+		float centerX = width / 2.0f;
+		float centerY = height / 2.0f;
+
+		glColor3f(1.0f, 1.0f, 0.0f); // 노란색
+		std::string msg = "GAME CLEAR!";
+
+		// 텍스트 길이 대략 계산해서 중앙 정렬
+		int textWidth = BitmapStringWidth(GLUT_BITMAP_TIMES_ROMAN_24, msg);
+
+		glPushMatrix();
+		glTranslatef(centerX - (textWidth / 2), centerY + 80, 0.0f);
+		// 폰트 크기 키우기 위해 스케일링하거나 큰 폰트 사용
+		// GLUT 비트맵 폰트는 스케일링이 안되므로 TIMES_ROMAN_24 사용
+		RenderBitmapString(0, 0, GLUT_BITMAP_TIMES_ROMAN_24, msg.c_str());
+		glPopMatrix();
+
+		// 표 위치/크기 대충 잡기
+		float tableX = centerX - 200.0f; // 왼쪽 시작 x
+		float tableTopY = centerY + 40.0f;  // 헤더 y
+		float rowHeight = 24.0f;            // 한 줄 높이
+		void* font = GLUT_BITMAP_HELVETICA_18;
+
+		// 3. 헤더
+		glColor3f(1.0f, 1.0f, 1.0f);
+		RenderBitmapString(tableX + 130, tableTopY, font, "Rank");
+		RenderBitmapString(tableX + 0, tableTopY, font, "Player");
+		RenderBitmapString(tableX + 220, tableTopY, font, "Score");
+
+		// 각 플레이어 줄
+		for (int i = 0; i < MAX_PLAYERS; ++i) {
+			float y = tableTopY - (i + 1) * rowHeight;
+
+			// (1) Rank
+			char bufRank[16];
+			sprintf(bufRank, "%d", g_endScores[i].rank);
+
+			// (2) Player (me 표시)
+			char bufPlayer[32];
+			if (i == PlayerId) {
+				sprintf(bufPlayer, "Player_%d (me)", i + 1);
+			}
+			else {
+				sprintf(bufPlayer, "Player_%d", i + 1);
+			}
+
+			// (3) Score
+			char bufScore[16];
+			sprintf(bufScore, "%d", g_endScores[i].Finalscore);
+			glColor3f(1.0f, 1.0f, 1.0f); // 흰색
+
+			RenderBitmapString(tableX + 130, y, font, bufRank);
+			RenderBitmapString(tableX + 0, y, font, bufPlayer);
+			RenderBitmapString(tableX + 220, y, font, bufScore);
+		}
+
+		glMatrixMode(GL_PROJECTION);
+		glPopMatrix();
+		glMatrixMode(GL_MODELVIEW);
+		glPopMatrix();
+
+		glEnable(GL_DEPTH_TEST);
+
+		glUseProgram(shaderProgramID); // 쉐이더 복구
+	}
+
 	glutSwapBuffers();
 }
 
@@ -1014,3 +1237,4 @@ void Reshape(int w, int h)
 	height = h;
 	glViewport(0, 0, w, h);
 }
+

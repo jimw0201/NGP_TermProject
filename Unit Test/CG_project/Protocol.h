@@ -69,6 +69,17 @@ enum PacketType : uint8_t {
     C2S_ReportParked,     // 클라 → 서버 : 주차 완료 보고
     C2S_GameReady,        // 클라 → 서버 : 준비 완료
     S2C_PlayerIdResponse, // 서버 → 클라 : 플레이어 ID 할당
+    S2C_StageClear
+};
+
+//struct StageScore {
+  //  int score;
+    //int rank;
+//};
+
+struct EndScore {
+    int rank;
+    int Finalscore;
 };
 
 // =============================
@@ -90,6 +101,7 @@ struct S2C_GameStartPacket {
 struct S2C_GameStateUpdatePacket {
     PacketType      type = S2C_GameStateUpdate;
     int             srvElapsedSec;                        // 서버 기준 경과 시간(초)
+    int             currentStage;
     PlayerData      playerData[MAX_PLAYERS];              // 각 플레이어 차량 상태
     PlayerGameStats PlayerStats[MAX_PLAYERS];             // 각 플레이어 게임 통계
 };
@@ -98,6 +110,17 @@ struct S2C_GameStateUpdatePacket {
 struct S2C_PlayerIdResponsePacket {
     PacketType type = S2C_PlayerIdResponse;
     int        PlayerID; // 0 ~ 3
+};
+
+// 스테이지 클리어 패킷
+struct S2C_StageClearPacket {
+    PacketType type = S2C_StageClear;
+    // StageScore playerStage[MAX_PLAYERS];
+};
+
+struct S2C_GameOverPacket {
+    PacketType type = S2C_GameOver;
+    EndScore playerEnd[MAX_PLAYERS];
 };
 
 #endif // PROTOCOL_H_
